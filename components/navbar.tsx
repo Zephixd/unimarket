@@ -91,12 +91,28 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
             Inicio
           </Link>
           <Link
+            href="/inicio"
+            className={`transition-colors hover:text-blue-600 ${
+              pathname === '/inicio' ? 'font-bold text-blue-600' : ''
+            }`}
+          >
+            Campus Feed
+          </Link>
+          <Link
             href="/productos"
             className={`transition-colors hover:text-blue-600 ${
-              pathname.startsWith('/productos') ? 'font-bold text-blue-600' : ''
+              pathname.startsWith('/productos') || pathname.startsWith('/buscar') ? 'font-bold text-blue-600' : ''
             }`}
           >
             Explorar Productos
+          </Link>
+          <Link
+            href="/ranking"
+            className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
+              pathname.startsWith('/ranking') ? 'font-bold text-blue-600' : ''
+            }`}
+          >
+            <span>🏆 Ranking UCSI</span>
           </Link>
           <Link
             href="/mensajes"
@@ -197,32 +213,67 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
             <Link
               href="/"
               onClick={() => setMobileMenu(false)}
-              className="rounded-xl px-3 py-2.5 hover:bg-slate-50"
+              className="rounded-xl px-3 py-2 hover:bg-slate-50"
             >
-              Inicio (Landing)
+              Bienvenida (Landing)
+            </Link>
+            <Link
+              href="/inicio"
+              onClick={() => setMobileMenu(false)}
+              className="rounded-xl px-3 py-2 font-semibold text-blue-600 hover:bg-slate-50"
+            >
+              Campus Feed (UCSI)
             </Link>
             <Link
               href="/productos"
               onClick={() => setMobileMenu(false)}
-              className="rounded-xl px-3 py-2.5 hover:bg-slate-50"
+              className="rounded-xl px-3 py-2 hover:bg-slate-50"
             >
-              Explorar Productos
+              Explorar Catálogo
+            </Link>
+            <Link
+              href="/ranking"
+              onClick={() => setMobileMenu(false)}
+              className="rounded-xl px-3 py-2 font-medium text-amber-600 hover:bg-slate-50"
+            >
+              🏆 Ranking de Vendedores
             </Link>
             <Link
               href="/mensajes"
               onClick={() => setMobileMenu(false)}
-              className="rounded-xl px-3 py-2.5 hover:bg-slate-50"
+              className="rounded-xl px-3 py-2 hover:bg-slate-50"
             >
               Mensajes y Chat
+            </Link>
+            <Link
+              href="/invitar"
+              onClick={() => setMobileMenu(false)}
+              className="rounded-xl px-3 py-2 hover:bg-slate-50"
+            >
+              🎁 Invitar Amigos (Insignias)
+            </Link>
+            <Link
+              href="/favoritos"
+              onClick={() => setMobileMenu(false)}
+              className="rounded-xl px-3 py-2 hover:bg-slate-50"
+            >
+              ❤️ Mis Favoritos
+            </Link>
+            <Link
+              href="/notificaciones"
+              onClick={() => setMobileMenu(false)}
+              className="rounded-xl px-3 py-2 hover:bg-slate-50"
+            >
+              🔔 Notificaciones
             </Link>
             {user ? (
               <>
                 <Link
                   href="/perfil"
                   onClick={() => setMobileMenu(false)}
-                  className="rounded-xl px-3 py-2.5 hover:bg-slate-50"
+                  className="rounded-xl px-3 py-2 font-semibold text-slate-900 hover:bg-slate-50"
                 >
-                  Mi Perfil ({profileName || user.email?.split('@')[0]})
+                  👤 Mi Perfil ({profileName || user.email?.split('@')[0]})
                 </Link>
                 <button
                   onClick={() => {

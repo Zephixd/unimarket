@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
-import { Sparkles, X } from 'lucide-react'
+import { Camera, Image as ImageIcon, Sparkles, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type PublishModalProps = {
@@ -23,16 +23,28 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
   const [title, setTitle] = useState('')
   const [price, setPrice] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0].id)
-  const [faculty, setFaculty] = useState('Facultad Politécnica (FPUNA)')
+  const [faculty, setFaculty] = useState('Derecho (UCSI Campus San Ignacio)')
   const [condition, setCondition] = useState('like_new')
-  const [meetingPoint, setMeetingPoint] = useState('Campus UNA San Lorenzo - Biblioteca Central')
+  const [meetingPoint, setMeetingPoint] = useState('Biblioteca Central UCSI Campus San Ignacio')
   const [description, setDescription] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const [acceptsExchange, setAcceptsExchange] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const supabase = createClient()
 
   if (!isOpen) return null
+
+  // File upload simulation (reads as base64 preview)
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImageUrl(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -41,25 +53,37 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
 
     try {
       const { data: authData } = await supabase.auth.getUser()
-      const sellerId = authData.user?.id || 'f6ae5678-deb4-43cb-95bc-a7974ca1ad63'
+      const sellerId = authData.user?.id || '03d5a087-5423-4c25-8df1-91afbe92728b' // Jesus Gonzalez fallback
       const numericPrice = Number(price.replace(/[^0-9]/g, ''))
 
-      const { error } = await supabase.from('listings').insert({
-        seller_id: sellerId,
-        title,
-        description: description || 'Publicado por estudiante universitario en UniMarket.',
-        price_gs: numericPrice || 50000,
-        category_id: category,
-        condition,
-        faculty,
-        meeting_point: meetingPoint,
-        accepts_exchange: acceptsExchange,
-        status: 'active',
-      })
+      const { data: newListing, error } = await supabase
+        .from('listings')
+        .insert({
+          seller_id: sellerId,
+          title,
+          description: description || 'Publicado por estudiante en UCSI Campus San Ignacio.',
+          price_gs: numericPrice || 50000,
+          category_id: category,
+          condition,
+          faculty,
+          meeting_point: meetingPoint,
+          accepts_exchange: acceptsExchange,
+          status: 'active',
+          image_url:
+            imageUrl ||
+            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
+        })
+        .select()
+        .single()
 
       if (error) {
         setErrorMsg('Error al publicar: ' + error.message)
       } else {
+        if (newListing?.id && imageUrl) {
+          await supabase
+            .from('listing_images')
+            .insert({ listing_id: newListing.id, path: imageUrl, position: 0 })
+        }
         onClose()
         onSuccess?.()
       }
@@ -72,14 +96,14 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm overflow-y-auto">
       <form
         onSubmit={handleSubmit}
-        className="my-8 w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl transition-all"
+        className="my-6 w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl transition-all sm:p-7"
       >
         <div className="flex items-center justify-between">
           <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-500">
+              Campus San Ignacio Misiones (UCSI)
+            </span>
             <h2 className="text-2xl font-bold text-slate-950">Publicar en UniMarket</h2>
-            <p className="mt-1 text-xs text-slate-500">
-              Llega a miles de estudiantes de tu facultad y campus
-            </p>
           </div>
           <button
             type="button"
@@ -97,14 +121,48 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
         )}
 
         <div className="mt-5 flex flex-col gap-3.5">
+          {/* Image Upload Box */}
           <div>
-            <label className="text-xs font-semibold text-slate-600">¿Qué vendes o intercambias?</label>
+            <label className="text-xs font-semibold text-slate-600">Fotos del producto (hasta 5)</label>
+            <div className="mt-1 flex items-center gap-3">
+              <div className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Preview" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="grid h-full w-full place-items-center text-slate-400">
+                    <ImageIcon className="size-6" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50">
+                  <Camera className="size-4 text-blue-600" />
+                  Subir foto desde dispositivo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                <input
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="O pega el enlace de imagen..."
+                  className="mt-2 h-8 w-full rounded-lg border border-slate-200 px-2.5 text-xs outline-none focus:border-blue-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Nombre del producto</label>
             <input
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="ej. Libro Cálculo Stewart 8va Edición"
-              className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+              placeholder="ej. Manual de Derecho Civil o Calculadora Casio"
+              className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-600"
             />
           </div>
 
@@ -118,8 +176,8 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
                 step="5000"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="ej. 80000"
-                className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                placeholder="ej. 85000"
+                className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-600"
               />
             </div>
             <div>
@@ -127,7 +185,7 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-600"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.id} value={cat.id}>
@@ -140,12 +198,12 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-slate-600">Universidad / Facultad</label>
+              <label className="text-xs font-semibold text-slate-600">Facultad / Carrera</label>
               <input
                 value={faculty}
                 onChange={(e) => setFaculty(e.target.value)}
-                placeholder="ej. FPUNA, FCM, FIUNA, UCA"
-                className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                placeholder="ej. Derecho (UCSI) o Enfermería"
+                className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-600"
               />
             </div>
             <div>
@@ -153,7 +211,7 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
               <select
                 value={condition}
                 onChange={(e) => setCondition(e.target.value)}
-                className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-600"
               >
                 <option value="like_new">Como nuevo</option>
                 <option value="new">Nuevo en caja</option>
@@ -164,12 +222,12 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-600">Punto de encuentro sugerido en el campus</label>
+            <label className="text-xs font-semibold text-slate-600">Punto de encuentro en el campus</label>
             <input
               value={meetingPoint}
               onChange={(e) => setMeetingPoint(e.target.value)}
-              placeholder="ej. Biblioteca Central, Cantina de Poli, etc."
-              className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+              placeholder="ej. Biblioteca Central, Cantina UCSI, Patio Central"
+              className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-600"
             />
           </div>
 
@@ -179,8 +237,8 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detalles sobre el uso, edición, notas incluidas o si aceptas intercambio..."
-              className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+              placeholder="Detalles sobre uso, edición, notas o accesorios incluidos..."
+              className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-600"
             />
           </div>
 
@@ -192,16 +250,16 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
               className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-xs font-medium text-slate-700">
-              Acepto intercambio por otros artículos universitarios
+              Acepto intercambio por otros materiales en UCSI
             </span>
           </label>
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 h-12 w-full rounded-xl bg-orange-500 font-semibold text-white shadow-md shadow-orange-200 transition-all hover:bg-orange-600 disabled:opacity-50"
+            className="mt-2 h-12 w-full rounded-xl bg-orange-500 font-bold text-white shadow-md shadow-orange-200 transition-all hover:bg-orange-600 disabled:opacity-50"
           >
-            {loading ? 'Publicando...' : 'Publicar producto ahora'}
+            {loading ? 'Publicando...' : 'Publicar producto'}
           </button>
         </div>
       </form>
