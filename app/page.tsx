@@ -1,107 +1,79 @@
 'use client'
 
-import {
-  ArrowRight,
-  Bell,
-  BookOpen,
-  Calculator,
-  CheckCircle2,
-  ChevronRight,
-  Heart,
-  Laptop,
-  Menu,
-  MessageCircle,
-  Package,
-  Plus,
-  Search,
-  ShieldCheck,
-  ShoppingBag,
-  Sparkles,
-  Star,
-  Tag,
-  Users,
-  X,
-} from 'lucide-react'
-import { useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
+import { ArrowRight, BookOpen, Calculator, Heart, Laptop, Menu, MessageCircle, Package, Plus, Search, ShieldCheck, ShoppingBag, Sparkles, Star, X } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
-const categories = [
-  { label: 'Libros', icon: BookOpen, color: 'blue' },
-  { label: 'Calculadoras', icon: Calculator, color: 'orange' },
-  { label: 'Tecnología', icon: Laptop, color: 'violet' },
-  { label: 'Apuntes', icon: Package, color: 'green' },
+type Listing = { id: string; title: string; description: string; price_gs: number; condition: string; faculty: string | null; meeting_point: string | null; category_id: string | null; seller_id: string; status: string }
+type Category = { id: string; name: string; icon: string }
+
+const iconMap: Record<string, typeof BookOpen> = { 'book-open': BookOpen, calculator: Calculator, laptop: Laptop, 'notebook-tabs': Package, package: Package }
+const fallbackListings: Listing[] = [
+  { id: 'demo-1', title: 'Libro de Programación', description: 'Edición en muy buen estado.', price_gs: 120000, condition: 'good', faculty: 'Ingeniería', meeting_point: 'Campus UNA', category_id: null, seller_id: '', status: 'active' },
+  { id: 'demo-2', title: 'Calculadora científica', description: 'Funciona perfectamente.', price_gs: 80000, condition: 'like_new', faculty: 'Ciencias Económicas', meeting_point: 'Campus UCA', category_id: null, seller_id: '', status: 'active' },
+  { id: 'demo-3', title: 'Mochila universitaria', description: 'Amplia y resistente.', price_gs: 150000, condition: 'good', faculty: 'Diseño', meeting_point: 'U. Columbia', category_id: null, seller_id: '', status: 'active' },
 ]
 
-const products = [
-  { name: 'Libro de Programación', detail: 'Ingeniería · UNA', price: '120.000', image: 'book', liked: false },
-  { name: 'Calculadora científica', detail: 'Ciencias Económicas · UCA', price: '80.000', image: 'calc', liked: true },
-  { name: 'Mochila universitaria', detail: 'Diseño · U. Columbia', price: '150.000', image: 'bag', liked: false },
-]
-
-function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5" aria-label="UniMarket">
-      <div className="grid size-10 place-items-center rounded-[13px] bg-blue-600 text-white shadow-sm shadow-blue-200">
-        <ShoppingBag className="size-5" strokeWidth={2.5} />
-      </div>
-      {!compact && <span className="text-[1.1rem] font-bold tracking-[-0.04em] text-slate-950">Uni<span className="text-blue-600">Market</span></span>}
-    </div>
-  )
-}
-
-function ProductArtwork({ type }: { type: string }) {
-  if (type === 'book') return <div className="product-art book-art"><BookOpen className="size-16 text-white/90" strokeWidth={1.2} /><span>PROGRAMACIÓN<br />DESDE CERO</span></div>
-  if (type === 'calc') return <div className="product-art calc-art"><Calculator className="size-16 text-slate-800" strokeWidth={1.2} /><div className="calc-dots"><i /><i /><i /></div></div>
-  return <div className="product-art bag-art"><ShoppingBag className="size-16 text-white" strokeWidth={1.3} /><div className="bag-handle" /></div>
-}
+function formatPrice(value: number) { return `${new Intl.NumberFormat('es-PY').format(value)} Gs.` }
+function Logo() { return <div className="flex items-center gap-2.5"><div className="grid size-10 place-items-center rounded-[13px] bg-blue-600 text-white"><ShoppingBag className="size-5" /></div><span className="text-[1.1rem] font-bold tracking-[-0.04em]">Uni<span className="text-blue-600">Market</span></span></div> }
 
 export default function Page() {
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
+  const [listings, setListings] = useState<Listing[]>(fallbackListings)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [query, setQuery] = useState('')
+  const [liked, setLiked] = useState<string[]>([])
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [publishOpen, setPublishOpen] = useState(false)
   const [mobileMenu, setMobileMenu] = useState(false)
-  const [search, setSearch] = useState('')
-  const [liked, setLiked] = useState(products.map((product) => product.liked))
-  const [installMessage, setInstallMessage] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [title, setTitle] = useState('')
+  const [price, setPrice] = useState('')
+  const [feedback, setFeedback] = useState('')
 
-  return (
-    <main className="min-h-screen overflow-hidden bg-white text-slate-950">
-      <header className="relative z-20 border-b border-slate-100 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
-          <Logo />
-          <nav className="hidden items-center gap-8 text-sm font-medium text-slate-500 lg:flex">
-            <a className="text-slate-950" href="#explorar">Explorar</a>
-            <a href="#como-funciona" className="transition-colors hover:text-slate-950">Cómo funciona</a>
-            <a href="#confianza" className="transition-colors hover:text-slate-950">Confianza y seguridad</a>
-          </nav>
-          <div className="hidden items-center gap-3 sm:flex">
-            <button className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">Iniciar sesión</button>
-            <button className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-md">Crear cuenta</button>
-          </div>
-          <button aria-label={mobileMenu ? 'Cerrar menú' : 'Abrir menú'} onClick={() => setMobileMenu(!mobileMenu)} className="grid size-11 place-items-center rounded-xl bg-slate-50 sm:hidden">
-            {mobileMenu ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
-        </div>
-        {mobileMenu && <div className="border-t border-slate-100 bg-white px-5 pb-5 pt-3 sm:hidden"><div className="flex flex-col gap-1 text-sm font-medium"><a href="#explorar" className="rounded-xl px-3 py-3">Explorar</a><a href="#como-funciona" className="rounded-xl px-3 py-3">Cómo funciona</a><a href="#confianza" className="rounded-xl px-3 py-3">Confianza y seguridad</a><button className="mt-2 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white">Crear cuenta</button></div></div>}
-      </header>
+  useEffect(() => {
+    const client = createClient()
+    setSupabase(client)
+    client.from('categories').select('id,name,icon').order('name').then(({ data }) => { if (data) setCategories(data) })
+    client.from('listings').select('id,title,description,price_gs,condition,faculty,meeting_point,category_id,seller_id,status').eq('status', 'active').order('created_at', { ascending: false }).limit(12).then(({ data }) => { if (data?.length) setListings(data) })
+    client.auth.getUser().then(({ data }) => setUser(data.user ? { id: data.user.id, email: data.user.email } : null))
+    const { data: listener } = client.auth.onAuthStateChange((_event, session) => setUser(session?.user ? { id: session.user.id, email: session.user.email } : null))
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
-      <section className="hero-grid relative mx-auto max-w-7xl px-5 pb-16 pt-14 sm:px-8 sm:pt-20 lg:flex lg:min-h-[600px] lg:items-center lg:gap-16 lg:px-10 lg:pb-20 lg:pt-16">
-        <div className="relative z-10 max-w-xl lg:w-[48%]">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700"><Sparkles className="size-3.5" /> Hecho para estudiantes de Paraguay</div>
-          <h1 className="max-w-2xl text-[clamp(2.75rem,6vw,5rem)] font-bold leading-[0.98] tracking-[-0.07em] text-slate-950">Tu campus.<br /><span className="text-blue-600">Tu mercado.</span></h1>
-          <p className="mt-7 max-w-lg text-lg leading-8 text-slate-500 sm:text-xl">Compra, vende e intercambia con estudiantes de tu universidad. Todo en un solo lugar, fácil y seguro.</p>
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row"><button className="group inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 text-base font-semibold text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl">Empezar ahora <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></button><button onClick={() => setInstallMessage(true)} className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50">Instalar UniMarket</button></div>
-          <div className="mt-10 flex items-center gap-7 text-sm text-slate-500"><div className="flex -space-x-2"><span className="avatar avatar-a">M</span><span className="avatar avatar-b">A</span><span className="avatar avatar-c">L</span><span className="avatar avatar-d">+</span></div><span><strong className="font-semibold text-slate-800">2.500+</strong> estudiantes ya están aquí</span></div>
-        </div>
-        <div className="hero-visual relative mt-16 flex-1 lg:mt-0"><div className="glow" /><div className="floating-note note-one"><CheckCircle2 className="size-4 text-emerald-500" /><span>Correo verificado</span></div><div className="floating-note note-two"><MessageCircle className="size-4 text-blue-600" /><span>Chat seguro</span></div><div className="phone-shell"><div className="phone-screen"><div className="flex items-center justify-between"><Logo compact /><div className="relative grid size-9 place-items-center rounded-full bg-slate-100"><Bell className="size-4 text-slate-600" /><span className="absolute right-1 top-1 size-1.5 rounded-full bg-orange-500" /></div></div><div className="mt-7"><p className="text-xs font-medium text-slate-400">Martes, 12 de agosto</p><h2 className="mt-1 text-xl font-bold tracking-tight">Hola, Martina</h2></div><div className="mt-5 flex h-12 items-center gap-2 rounded-xl bg-slate-100 px-3 text-sm text-slate-400"><Search className="size-4" /><span>¿Qué estás buscando?</span></div><div className="mt-6 flex gap-2 overflow-hidden">{categories.map((category) => { const Icon = category.icon; return <div key={category.label} className="flex min-w-[72px] flex-col items-center gap-2"><div className={`grid size-12 place-items-center rounded-2xl category-${category.color}`}><Icon className="size-5" /></div><span className="text-[10px] font-medium text-slate-500">{category.label}</span></div> })}</div><div className="mt-7 flex items-center justify-between"><h3 className="text-sm font-bold">Cerca de ti</h3><span className="text-[11px] font-semibold text-blue-600">Ver todo</span></div><div className="mt-3 flex gap-3 overflow-hidden">{products.map((product, index) => <div key={product.name} className="w-[126px] shrink-0"><div className="relative overflow-hidden rounded-xl"><ProductArtwork type={product.image} /><button aria-label={`Guardar ${product.name}`} onClick={() => setLiked((current) => current.map((value, itemIndex) => itemIndex === index ? !value : value))} className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/90"><Heart className={`size-3.5 ${liked[index] ? 'fill-orange-500 text-orange-500' : 'text-slate-600'}`} /></button></div><p className="mt-2 truncate text-[11px] font-semibold text-slate-800">{product.name}</p><p className="mt-0.5 text-[11px] font-bold text-blue-600">G. {product.price}</p></div>)}</div></div></div></div>
-      </section>
+  const visibleListings = listings.filter((item) => `${item.title} ${item.description} ${item.faculty ?? ''}`.toLowerCase().includes(query.toLowerCase()))
+  async function toggleFavorite(id: string) {
+    if (!user || !supabase) { setAuthOpen(true); return }
+    if (liked.includes(id)) { await supabase.from('favorites').delete().eq('user_id', user.id).eq('listing_id', id); setLiked((items) => items.filter((item) => item !== id)) }
+    else { await supabase.from('favorites').upsert({ user_id: user.id, listing_id: id }); setLiked((items) => [...items, id]) }
+  }
+  async function handleAuth(event: FormEvent) {
+    event.preventDefault(); setFeedback('')
+    if (!supabase) return
+    const result = authMode === 'login' ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${window.location.origin}/auth/callback` } })
+    if (result.error) setFeedback('No pudimos completar la operación. Revisa tus datos e inténtalo de nuevo.')
+    else { setFeedback(authMode === 'signup' ? 'Revisa tu correo para confirmar tu cuenta.' : 'Sesión iniciada.'); if (authMode === 'login') setAuthOpen(false) }
+  }
+  async function handlePublish(event: FormEvent) {
+    event.preventDefault(); if (!user || !supabase) { setPublishOpen(false); setAuthOpen(true); return }
+    const { data, error } = await supabase.from('listings').insert({ seller_id: user.id, title, description: 'Publicado desde UniMarket', price_gs: Number(price), status: 'active' }).select().single()
+    if (error) setFeedback('No se pudo publicar. Completa todos los campos.')
+    else { setListings((items) => [data, ...items]); setTitle(''); setPrice(''); setPublishOpen(false); setFeedback('Tu producto fue publicado.') }
+  }
 
-      <section id="explorar" className="border-y border-slate-100 bg-slate-50/70 px-5 py-14 sm:px-8 lg:px-10 lg:py-20"><div className="mx-auto max-w-7xl"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm font-bold uppercase tracking-[0.15em] text-orange-500">Explora sin límites</p><h2 className="mt-3 text-3xl font-bold tracking-[-0.05em] sm:text-4xl">Todo lo que necesitas,<br className="sm:hidden" /> a tu alcance.</h2></div><div className="relative flex h-12 w-full items-center rounded-xl border border-slate-200 bg-white px-4 sm:max-w-xs"><Search className="size-4 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar en UniMarket" className="w-full bg-transparent px-3 text-sm outline-none placeholder:text-slate-400" /><kbd className="hidden rounded-md bg-slate-100 px-1.5 py-1 text-[10px] text-slate-400 sm:block">⌘ K</kbd></div></div><div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{categories.map((category) => { const Icon = category.icon; return <button key={category.label} className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-100/50"><div className={`grid size-12 shrink-0 place-items-center rounded-xl category-${category.color}`}><Icon className="size-5" /></div><div className="flex-1"><p className="font-semibold">{category.label}</p><p className="mt-1 text-xs text-slate-400">Encuentra el tuyo</p></div><ChevronRight className="size-4 text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-blue-600" /></button> })}</div></div></section>
-
-      <section id="como-funciona" className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-24"><div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center"><div><p className="text-sm font-bold uppercase tracking-[0.15em] text-blue-600">Simple por diseño</p><h2 className="mt-3 max-w-md text-3xl font-bold leading-tight tracking-[-0.05em] sm:text-4xl">Del aula a tu nuevo dueño en tres pasos.</h2><p className="mt-5 max-w-md leading-7 text-slate-500">Una experiencia pensada para que encuentres lo que buscas y conectes con personas de confianza.</p><button className="mt-7 inline-flex items-center gap-2 font-semibold text-blue-600">Conoce cómo funciona <ArrowRight className="size-4" /></button></div><div className="grid gap-4 sm:grid-cols-3"><div className="step-card"><div className="step-number">01</div><Tag className="size-6 text-blue-600" /><h3>Publica</h3><p>Sube una foto, agrega los detalles y listo.</p></div><div className="step-card step-highlight"><div className="step-number">02</div><Search className="size-6 text-orange-500" /><h3>Encuentra</h3><p>Filtra por universidad, carrera y precio.</p></div><div className="step-card"><div className="step-number">03</div><MessageCircle className="size-6 text-blue-600" /><h3>Conecta</h3><p>Coordina el encuentro dentro del campus.</p></div></div></div></section>
-
-      <section id="confianza" className="trust-section mx-5 mb-10 overflow-hidden rounded-[28px] bg-blue-600 px-6 py-12 text-white sm:mx-8 sm:px-12 lg:mx-auto lg:max-w-7xl lg:px-16 lg:py-14"><div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-center"><div><div className="mb-4 grid size-11 place-items-center rounded-2xl bg-white/15"><ShieldCheck className="size-6" /></div><h2 className="max-w-lg text-3xl font-bold tracking-[-0.05em] sm:text-4xl">Compra con confianza.<br />Vende con orgullo.</h2><p className="mt-4 max-w-md leading-7 text-blue-100">Perfiles verificados, reputación transparente y encuentros seguros dentro de tu universidad.</p></div><div className="grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-4 lg:min-w-[470px]"><div><p className="text-3xl font-bold">2.5k+</p><p className="mt-1 text-sm text-blue-100">Estudiantes</p></div><div><p className="text-3xl font-bold">12</p><p className="mt-1 text-sm text-blue-100">Universidades</p></div><div><p className="flex items-center gap-1 text-3xl font-bold">4.9 <Star className="size-5 fill-orange-400 text-orange-400" /></p><p className="mt-1 text-sm text-blue-100">Calificación</p></div><div><p className="text-3xl font-bold">100%</p><p className="mt-1 text-sm text-blue-100">Paraguayo</p></div></div></div></section>
-
-      <footer className="border-t border-slate-100 px-5 py-8 sm:px-8 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between"><Logo /><p>© 2025 UniMarket. Hecho para estudiantes, por estudiantes.</p><div className="flex gap-5"><a href="#confianza" className="hover:text-slate-700">Privacidad</a><a href="#confianza" className="hover:text-slate-700">Ayuda</a></div></div></footer>
-
-      <button aria-label="Publicar un producto" className="fixed bottom-5 right-5 z-30 flex h-14 items-center gap-2 rounded-2xl bg-orange-500 px-5 font-semibold text-white shadow-xl shadow-orange-200 transition-all hover:-translate-y-1 hover:bg-orange-600 sm:bottom-8 sm:right-8"><Plus className="size-5" /> <span className="hidden sm:inline">Publicar producto</span></button>
-      {installMessage && <div role="status" className="fixed bottom-24 left-5 right-5 z-40 flex items-center justify-between gap-4 rounded-2xl border border-blue-100 bg-white p-4 text-sm shadow-2xl sm:left-auto sm:right-8 sm:w-[360px]"><div><p className="font-semibold">Instala UniMarket</p><p className="mt-1 text-slate-500">Añádela a tu pantalla de inicio para acceder más rápido.</p></div><button aria-label="Cerrar aviso" onClick={() => setInstallMessage(false)} className="grid size-9 shrink-0 place-items-center rounded-lg bg-slate-50"><X className="size-4" /></button></div>}
-    </main>
-  )
+  return <main className="min-h-screen bg-white text-slate-950">
+    <header className="sticky top-0 z-20 border-b border-slate-100 bg-white/90 backdrop-blur-xl"><div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"><Logo /><nav className="hidden gap-8 text-sm font-medium text-slate-500 lg:flex"><a href="#explorar" className="text-slate-950">Explorar</a><a href="#como-funciona">Cómo funciona</a><a href="#confianza">Confianza y seguridad</a></nav><div className="hidden items-center gap-3 sm:flex"><button onClick={() => { setAuthMode('login'); setAuthOpen(true) }} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">{user ? 'Mi cuenta' : 'Iniciar sesión'}</button><button onClick={() => { setAuthMode('signup'); setAuthOpen(true) }} className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">{user ? 'Sesión activa' : 'Crear cuenta'}</button></div><button aria-label="Abrir menú" onClick={() => setMobileMenu(!mobileMenu)} className="grid size-11 place-items-center rounded-xl bg-slate-50 sm:hidden">{mobileMenu ? <X /> : <Menu />}</button></div>{mobileMenu && <div className="flex flex-col gap-2 border-t border-slate-100 bg-white px-5 pb-5 pt-3 sm:hidden"><a href="#explorar">Explorar</a><a href="#como-funciona">Cómo funciona</a><button onClick={() => setPublishOpen(true)} className="rounded-xl bg-orange-500 px-4 py-3 font-semibold text-white">Publicar producto</button></div>}</header>
+    <section className="hero-grid mx-auto flex max-w-7xl flex-col gap-12 px-5 pb-16 pt-16 sm:px-8 lg:flex-row lg:items-center lg:px-10 lg:py-24"><div className="max-w-2xl lg:w-1/2"><div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700"><Sparkles className="size-3.5" /> Hecho para estudiantes de Paraguay</div><h1 className="text-[clamp(2.75rem,6vw,5rem)] font-bold leading-[0.98] tracking-[-0.07em]">Tu campus.<br /><span className="text-blue-600">Tu mercado.</span></h1><p className="mt-7 max-w-lg text-lg leading-8 text-slate-500">Compra, vende e intercambia con estudiantes de tu universidad. Todo en un solo lugar, fácil y seguro.</p><div className="mt-9 flex flex-col gap-3 sm:flex-row"><button onClick={() => document.getElementById('explorar')?.scrollIntoView({ behavior: 'smooth' })} className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 font-semibold text-white shadow-lg shadow-blue-200 hover:bg-blue-700">Empezar ahora <ArrowRight className="size-4" /></button><button onClick={() => setPublishOpen(true)} className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 px-6 font-semibold text-slate-700 hover:bg-slate-50"><Plus className="size-4" /> Publicar producto</button></div></div><div className="mx-auto w-full max-w-md rounded-[34px] bg-blue-600 p-5 shadow-2xl shadow-blue-200"><div className="rounded-[25px] bg-white p-5"><div className="flex items-center justify-between"><Logo /><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-600">VERIFICADO</span></div><div className="mt-8 rounded-2xl bg-slate-100 p-4"><Search className="size-4 text-slate-400" /><p className="mt-2 text-sm font-semibold">Encuentra algo cerca de ti</p></div><div className="mt-5 grid grid-cols-4 gap-2">{(categories.length ? categories.slice(0, 4) : [{ id: '1', name: 'Libros', icon: 'book-open' }, { id: '2', name: 'Cálculo', icon: 'calculator' }, { id: '3', name: 'Tech', icon: 'laptop' }, { id: '4', name: 'Otros', icon: 'package' }]).map((category) => { const Icon = iconMap[category.icon] ?? Package; return <div key={category.id} className="text-center"><div className="mx-auto grid size-12 place-items-center rounded-2xl bg-blue-50 text-blue-600"><Icon className="size-5" /></div><span className="mt-1 block text-[10px] text-slate-500">{category.name}</span></div> })}</div></div></div></section>
+    <section id="explorar" className="border-y border-slate-100 bg-slate-50/70 px-5 py-14 sm:px-8 lg:px-10 lg:py-20"><div className="mx-auto max-w-7xl"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm font-bold uppercase tracking-[0.15em] text-orange-500">Explora sin límites</p><h2 className="mt-3 text-3xl font-bold tracking-[-0.05em] sm:text-4xl">Todo lo que necesitas, a tu alcance.</h2></div><div className="flex h-12 w-full items-center rounded-xl border border-slate-200 bg-white px-4 sm:max-w-xs"><Search className="size-4 text-slate-400" /><input aria-label="Buscar en UniMarket" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en UniMarket" className="w-full bg-transparent px-3 text-sm outline-none" /></div></div><div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{visibleListings.map((item) => <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-1 hover:shadow-lg"><div className="flex items-start justify-between"><div className="grid size-12 place-items-center rounded-xl bg-orange-50 text-orange-600"><Package className="size-5" /></div><button aria-label={`Guardar ${item.title}`} onClick={() => toggleFavorite(item.id)} className="rounded-full p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-500"><Heart className={liked.includes(item.id) ? 'fill-rose-500 text-rose-500' : ''} /></button></div><h3 className="mt-5 font-bold">{item.title}</h3><p className="mt-2 line-clamp-2 text-sm text-slate-500">{item.description || 'Producto publicado por un estudiante.'}</p><div className="mt-5 flex items-center justify-between"><span className="text-lg font-bold text-blue-600">{formatPrice(item.price_gs)}</span><button onClick={() => { if (!user) setAuthOpen(true); else setFeedback('Inicia una conversación desde tu cuenta.') }} className="inline-flex items-center gap-1 text-sm font-semibold text-slate-700"><MessageCircle className="size-4" /> Contactar</button></div></article>)}{visibleListings.length === 0 && <div className="col-span-full rounded-2xl border border-dashed border-slate-300 p-12 text-center text-slate-500">No encontramos productos con esa búsqueda.</div>}</div></div></section>
+    <section id="como-funciona" className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-24"><div className="grid gap-4 sm:grid-cols-3"><div className="step-card"><span className="text-xs font-bold text-blue-600">01</span><h3>Publica</h3><p>Sube tu producto y define un precio.</p></div><div className="step-card step-highlight"><span className="text-xs font-bold text-orange-500">02</span><h3>Encuentra</h3><p>Explora opciones cerca de tu campus.</p></div><div className="step-card"><span className="text-xs font-bold text-blue-600">03</span><h3>Conecta</h3><p>Coordina el encuentro con confianza.</p></div></div></section>
+    <section id="confianza" className="trust-section mx-5 mb-10 rounded-[28px] bg-blue-600 px-6 py-12 text-white sm:mx-8 sm:px-12 lg:mx-auto lg:max-w-7xl lg:px-16"><div className="flex items-center gap-4"><ShieldCheck className="size-10" /><div><h2 className="text-3xl font-bold">Compra con confianza.</h2><p className="mt-2 text-blue-100">Perfiles verificados y encuentros seguros dentro de tu universidad.</p></div></div></section>
+    <footer className="border-t border-slate-100 px-5 py-8"><div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between"><Logo /><span>© 2025 UniMarket. Hecho para estudiantes, por estudiantes.</span><span className="flex items-center gap-1">4.9 <Star className="size-4 fill-orange-400 text-orange-400" /></span></div></footer>
+    <button aria-label="Publicar un producto" onClick={() => setPublishOpen(true)} className="fixed bottom-5 right-5 z-30 flex h-14 items-center gap-2 rounded-2xl bg-orange-500 px-5 font-semibold text-white shadow-xl hover:bg-orange-600"><Plus className="size-5" /><span className="hidden sm:inline">Publicar producto</span></button>
+    {feedback && <div role="status" className="fixed bottom-24 left-5 right-5 z-40 rounded-2xl border border-blue-100 bg-white p-4 text-sm shadow-2xl sm:left-auto sm:right-8 sm:w-[360px]">{feedback}<button onClick={() => setFeedback('')} className="float-right text-slate-400"><X className="size-4" /></button></div>}
+    {authOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5"><form onSubmit={handleAuth} className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-2xl font-bold">{authMode === 'login' ? 'Bienvenido de vuelta' : 'Crea tu cuenta'}</h2><button type="button" onClick={() => setAuthOpen(false)}><X /></button></div><div className="mt-6 flex flex-col gap-4"><input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Correo universitario" className="h-12 rounded-xl border border-slate-200 px-4 outline-blue-600" /><input required minLength={6} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Contraseña" className="h-12 rounded-xl border border-slate-200 px-4 outline-blue-600" /><button className="h-12 rounded-xl bg-blue-600 font-semibold text-white">{authMode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}</button></div>{feedback && <p className="mt-4 text-sm text-slate-500">{feedback}</p>}<button type="button" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="mt-5 text-sm font-semibold text-blue-600">{authMode === 'login' ? '¿No tienes cuenta? Crea una' : 'Ya tengo una cuenta'}</button></form></div>}
+    {publishOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5"><form onSubmit={handlePublish} className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-2xl font-bold">Publicar producto</h2><button type="button" onClick={() => setPublishOpen(false)}><X /></button></div><div className="mt-6 flex flex-col gap-4"><input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="¿Qué vendes?" className="h-12 rounded-xl border border-slate-200 px-4 outline-blue-600" /><input required min="0" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Precio en guaraníes" className="h-12 rounded-xl border border-slate-200 px-4 outline-blue-600" /><button className="h-12 rounded-xl bg-orange-500 font-semibold text-white">Publicar ahora</button></div><p className="mt-4 text-xs text-slate-400">{user ? 'Tu publicación quedará visible para estudiantes.' : 'Necesitas iniciar sesión para publicar.'}</p></form></div>}
+  </main>
 }
