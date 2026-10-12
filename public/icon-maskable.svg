@@ -1,0 +1,72 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="orangeGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="100%" stop-color="#F97316" />
+    </linearGradient>
+    <filter id="shadowMask" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Full Bleed Background without radius for Maskable -->
+  <rect width="512" height="512" fill="url(#bgGradMask)" />
+  <circle cx="160" cy="130" r="180" fill="#FFFFFF" fill-opacity="0.12" />
+
+  <!-- Center Content scaled inside 72% safe zone -->
+  <g transform="translate(64, 64) scale(0.75)" filter="url(#shadowMask)">
+    <!-- Shopping Bag Handle -->
+    <path
+      d="M200 190 V145 C200 114 225 89 256 89 C287 89 312 114 312 145 V190"
+      stroke="#FFFFFF"
+      stroke-width="28"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <!-- Shopping Bag Body -->
+    <rect
+      x="136"
+      y="180"
+      width="240"
+      height="224"
+      rx="44"
+      fill="#FFFFFF"
+    />
+
+    <!-- Cap Diamond -->
+    <polygon
+      points="256,236 330,270 256,304 182,270"
+      fill="#2563EB"
+    />
+
+    <!-- Cap Base -->
+    <path
+      d="M212 284 C212 316 300 316 300 284"
+      fill="#1D4ED8"
+    />
+
+    <!-- Cap Tassel -->
+    <path
+      d="M330 270 L346 304 C348 316 340 326 332 326"
+      stroke="url(#orangeGradMask)"
+      stroke-width="7"
+      stroke-linecap="round"
+      fill="none"
+    />
+    <circle cx="332" cy="328" r="7" fill="url(#orangeGradMask)" />
+
+    <!-- Sparkle -->
+    <g transform="translate(340, 140)">
+      <path
+        d="M28 0 C28 15 15 28 0 28 C15 28 28 41 28 56 C28 41 41 28 56 28 C41 28 28 15 28 0 Z"
+        fill="url(#orangeGradMask)"
+      />
+    </g>
+  </g>
+</svg>
