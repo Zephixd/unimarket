@@ -3,9 +3,18 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'UniMarket | Compra, vende e intercambia entre estudiantes',
+  description: 'El marketplace universitario de Paraguay. Encuentra libros, tecnología, apuntes y más dentro de tu campus.',
+  generator: 'UniMarket',
+  manifest: '/manifest.webmanifest',
+  applicationName: 'UniMarket',
+  keywords: ['marketplace universitario', 'estudiantes Paraguay', 'compra y venta', 'libros universitarios'],
+  openGraph: {
+    title: 'UniMarket | Tu campus. Tu mercado.',
+    description: 'Compra, vende e intercambia con estudiantes de tu universidad.',
+    type: 'website',
+    locale: 'es_PY',
+  },
   icons: {
     icon: [
       {
@@ -39,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="es-PY">
       <body className="antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
