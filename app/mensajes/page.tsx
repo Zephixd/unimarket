@@ -5,9 +5,11 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
+  Banknote,
   Check,
   CheckCheck,
   Clock,
+  Coffee,
   MapPin,
   MessageCircle,
   Package,
@@ -329,27 +331,30 @@ function ChatContent() {
                 onClick={() =>
                   setNewMessage('¡Hola! ¿Nos encontramos en la Biblioteca Central para la entrega?')
                 }
-                className="shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-200"
+                className="flex items-center gap-1.5 shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-200"
               >
-                📍 Encontrarnos en Biblioteca
+                <MapPin className="size-3 text-blue-600" />
+                <span>Encontrarnos en Biblioteca</span>
               </button>
               <button
                 type="button"
                 onClick={() =>
                   setNewMessage('¡Buenas! ¿Está disponible? Puedo pasar por la Cantina de la facu.')
                 }
-                className="shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-200"
+                className="flex items-center gap-1.5 shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-200"
               >
-                🥪 Pasar por la Cantina
+                <Coffee className="size-3 text-orange-600" />
+                <span>Pasar por la Cantina</span>
               </button>
               <button
                 type="button"
                 onClick={() =>
                   setNewMessage('¡Hola! ¿Aceptas pago en efectivo o transferencia bancaria?')
                 }
-                className="shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-200"
+                className="flex items-center gap-1.5 shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-200"
               >
-                💵 Pago efectivo / transf.
+                <Banknote className="size-3 text-emerald-600" />
+                <span>Pago efectivo / transf.</span>
               </button>
             </div>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
-import { Check, ShieldCheck, Sparkles, User, X } from 'lucide-react'
+import { Check, ShieldCheck, Sparkles, Star, User, X, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type AuthModalProps = {
@@ -12,10 +12,10 @@ type AuthModalProps = {
 }
 
 const UCSI_DEMO_USERS = [
-  { name: 'Jesus Gonzalez', email: 'jesus.gonzalez@uc.edu.py', role: 'Derecho UCSI · ⭐ 4.9' },
-  { name: 'Belen Villalba', email: 'belen.villalba@uc.edu.py', role: 'Enfermería UCSI · ⭐ 4.8' },
-  { name: 'Jennifer Fretes', email: 'jennifer.fretes@uc.edu.py', role: 'Administración UCSI · ⭐ 4.7' },
-  { name: 'Luca Mosqueda', email: 'luca.mosqueda@uc.edu.py', role: 'Informática UCSI · ⭐ 4.6' },
+  { name: 'Jesus Gonzalez', email: 'jesus.gonzalez@uc.edu.py', faculty: 'Derecho UCSI', rating: '4.9' },
+  { name: 'Belen Villalba', email: 'belen.villalba@uc.edu.py', faculty: 'Enfermería UCSI', rating: '4.8' },
+  { name: 'Jennifer Fretes', email: 'jennifer.fretes@uc.edu.py', faculty: 'Administración UCSI', rating: '4.7' },
+  { name: 'Luca Mosqueda', email: 'luca.mosqueda@uc.edu.py', faculty: 'Informática UCSI', rating: '4.6' },
 ]
 
 export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthModalProps) {
@@ -132,8 +132,9 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
 
         {/* Quick UCSI Account Switcher */}
         <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5">
-          <p className="mb-2 text-xs font-bold text-blue-900">
-            ⚡ Iniciar como estudiante UCSI (1 Clic):
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-blue-900">
+            <Zap className="size-3.5 text-amber-500 fill-amber-400" />
+            <span>Iniciar como estudiante UCSI (1 Clic):</span>
           </p>
           <div className="grid grid-cols-2 gap-2">
             {UCSI_DEMO_USERS.map((u) => (
@@ -145,7 +146,14 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
                 className="flex flex-col items-start rounded-xl border border-blue-200 bg-white p-2 text-left shadow-sm transition-all hover:border-blue-400 hover:bg-blue-50/50 disabled:opacity-50"
               >
                 <span className="text-xs font-bold text-slate-900">{u.name}</span>
-                <span className="text-[10px] text-blue-600 font-medium">{u.role}</span>
+                <div className="flex items-center gap-1 text-[10px] text-blue-600 font-medium">
+                  <span>{u.faculty}</span>
+                  <span>·</span>
+                  <span className="flex items-center gap-0.5 text-amber-700 font-bold">
+                    <Star className="size-2.5 fill-amber-400 text-amber-400" />
+                    {u.rating}
+                  </span>
+                </div>
               </button>
             ))}
           </div>

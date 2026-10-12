@@ -110,8 +110,9 @@ export default function FichaAsoPage() {
               <div className="relative w-48 shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-amber-500 p-4 text-white shadow-md">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-amber-200">Ranking</span>
                 <p className="mt-2 text-sm font-black">Vendedores destacados</p>
-                <div className="mt-8 rounded-xl bg-white/20 p-2 text-center text-xs">
-                  ⭐ 4.9 con insignia universitaria
+                <div className="mt-8 rounded-xl bg-white/20 p-2 text-center text-xs flex items-center justify-center gap-1.5 font-bold">
+                  <Star className="size-3.5 fill-white text-white" />
+                  <span>4.9 con insignia universitaria</span>
                 </div>
               </div>
             </div>

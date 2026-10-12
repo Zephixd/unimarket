@@ -13,21 +13,36 @@ import {
   Search,
   Shirt,
   Sparkles,
+  Star,
   User,
 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { BottomNav } from '@/components/bottom-nav'
 import { PublishModal } from '@/components/publish-modal'
+import { ProductModal, ProductModalListing } from '@/components/product-modal'
 import { createClient } from '@/lib/supabase/client'
 
 type Listing = {
   id: string
   title: string
+  description?: string
   price_gs: number
   condition: string
   faculty: string | null
+  meeting_point?: string | null
   image_url: string | null
+  seller_id: string
   status: string
+  accepts_exchange?: boolean
+  profiles?: {
+    id?: string
+    full_name?: string
+    career_name?: string
+    university_name?: string
+    rating?: number
+    sales_count?: number
+    avatar_url?: string | null
+  } | null
 }
 
 const CATEGORIES = [
@@ -49,16 +64,18 @@ export default function InicioPage() {
   const [liked, setLiked] = useState<string[]>([])
   const [search, setSearch] = useState('')
   const [publishOpen, setPublishOpen] = useState(false)
-  const [user, setUser] = useState<{ email?: string } | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<Listing | null>(null)
+  const [productModalOpen, setProductModalOpen] = useState(false)
+  const [user, setUser] = useState<{ id?: string; email?: string } | null>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUser({ email: data.user.email })
+      if (data.user) setUser({ id: data.user.id, email: data.user.email })
     })
 
     supabase
       .from('listings')
-      .select('id,title,price_gs,condition,faculty,image_url,status')
+      .select('*, profiles:seller_id(id, full_name, career_name, university_name, rating, sales_count, avatar_url)')
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         if (data) setListings(data)
@@ -151,11 +168,18 @@ export default function InicioPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {listings.map((item) => {
               const isFav = liked.includes(item.id)
+              const sellerName = item.profiles?.full_name || 'Estudiante UCSI'
+              const sellerCareer = item.profiles?.career_name || item.faculty || 'UCSI San Ignacio'
+              const sellerRating = item.profiles?.rating ?? 4.8
+
               return (
-                <Link
+                <div
                   key={item.id}
-                  href={`/producto/${item.id}`}
-                  className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-3.5 transition-all hover:-translate-y-1 hover:shadow-xl"
+                  onClick={() => {
+                    setSelectedProduct(item)
+                    setProductModalOpen(true)
+                  }}
+                  className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-3.5 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl hover:border-blue-300"
                 >
                   <div>
                     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100 mb-3">
@@ -163,24 +187,26 @@ export default function InicioPage() {
                         <img
                           src={item.image_url}
                           alt={item.title}
-                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
                         <div className="grid h-full w-full place-items-center text-slate-300">
                           <Package className="size-8" />
                         </div>
                       )}
+
                       <button
                         onClick={(e) => {
-                          e.preventDefault()
+                          e.stopPropagation()
                           setLiked((prev) =>
                             isFav ? prev.filter((id) => id !== item.id) : [...prev, item.id]
                           )
                         }}
-                        className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/90 shadow-sm"
+                        aria-label="Favorito"
+                        className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/90 shadow-sm backdrop-blur-md"
                       >
                         <Heart
-                          className={`size-3.5 ${
+                          className={`size-3.5 transition-colors ${
                             isFav ? 'fill-rose-500 text-rose-500' : 'text-slate-600'
                           }`}
                         />
@@ -193,6 +219,27 @@ export default function InicioPage() {
                     <h3 className="mt-1.5 text-sm font-bold text-slate-900 group-hover:text-blue-600 line-clamp-1">
                       {item.title}
                     </h3>
+
+                    {/* VENDIDO POR - SELLER INFO WITH SVG */}
+                    <div className="mt-2.5 flex items-center justify-between rounded-xl bg-slate-50 p-2 border border-slate-100">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <div className="grid size-6 place-items-center rounded-lg bg-blue-600 text-[10px] font-black text-white shrink-0">
+                          {sellerName.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-black text-slate-800 truncate">
+                            Vendido por: {sellerName}
+                          </p>
+                          <p className="text-[10px] text-slate-500 truncate">
+                            {sellerCareer}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 border border-amber-200/80 text-[10px] font-black text-amber-800 shrink-0">
+                        <Star className="size-3 fill-amber-400 text-amber-400" />
+                        <span>{sellerRating.toFixed(1)}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2">
@@ -203,7 +250,7 @@ export default function InicioPage() {
                       {item.condition === 'like_new' ? 'Como nuevo' : 'Buen estado'}
                     </span>
                   </div>
-                </Link>
+                </div>
               )
             })}
           </div>
@@ -218,6 +265,16 @@ export default function InicioPage() {
         <Plus className="size-5" />
         <span>+ Publicar</span>
       </Link>
+
+      <ProductModal
+        isOpen={productModalOpen}
+        onClose={() => {
+          setProductModalOpen(false)
+          setSelectedProduct(null)
+        }}
+        listing={selectedProduct}
+        currentUserId={user?.id}
+      />
 
       <PublishModal isOpen={publishOpen} onClose={() => setPublishOpen(false)} />
       <BottomNav onOpenPublish={() => setPublishOpen(true)} />

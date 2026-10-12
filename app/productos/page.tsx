@@ -32,6 +32,9 @@ import { Navbar } from '@/components/navbar'
 import { PublishModal } from '@/components/publish-modal'
 import { ReviewModal } from '@/components/review-modal'
 import { AuthModal } from '@/components/auth-modal'
+import { ProductModal } from '@/components/product-modal'
+import { EditListingModal } from '@/components/edit-listing-modal'
+import { BottomNav } from '@/components/bottom-nav'
 import { createClient } from '@/lib/supabase/client'
 
 type Listing = {
@@ -46,9 +49,19 @@ type Listing = {
   seller_id: string
   status: string
   accepts_exchange?: boolean
+  image_url?: string | null
   created_at?: string
   seller_name?: string
   seller_faculty?: string
+  profiles?: {
+    id?: string
+    full_name?: string
+    career_name?: string
+    university_name?: string
+    rating?: number
+    sales_count?: number
+    avatar_url?: string | null
+  } | null
 }
 
 const CATEGORIES = [
@@ -86,6 +99,10 @@ export default function ProductosPage() {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login')
   const [reviewOpen, setReviewOpen] = useState(false)
   const [selectedReviewListing, setSelectedReviewListing] = useState<Listing | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<Listing | null>(null)
+  const [productModalOpen, setProductModalOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [selectedEditListing, setSelectedEditListing] = useState<Listing | null>(null)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
 
   // Load listings & user
@@ -107,7 +124,7 @@ export default function ProductosPage() {
 
     const { data, error } = await supabase
       .from('listings')
-      .select('*')
+      .select('*, profiles:seller_id(id, full_name, career_name, university_name, rating, sales_count, avatar_url)')
       .order('created_at', { ascending: false })
 
     if (!error && data) {
@@ -391,129 +408,196 @@ export default function ProductosPage() {
             const isOwner = currentUser?.id === item.seller_id
             const isFav = liked.includes(item.id)
             const isSold = item.status === 'sold'
+            const seller = item.profiles || null
+            const sellerName = seller?.full_name || 'Estudiante UCSI'
+            const sellerCareer = seller?.career_name || item.faculty || 'UCSI San Ignacio'
+            const sellerRating = seller?.rating ?? 4.8
 
             return (
               <article
                 key={item.id}
-                className={`group flex flex-col justify-between rounded-2xl border bg-white p-5 transition-all hover:-translate-y-1 hover:shadow-xl ${
+                onClick={() => {
+                  setSelectedProduct(item)
+                  setProductModalOpen(true)
+                }}
+                className={`group flex flex-col justify-between overflow-hidden rounded-2xl border bg-white cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl ${
                   isSold
                     ? 'border-slate-200/60 bg-slate-50/70 opacity-80'
-                    : 'border-slate-200 hover:border-blue-200'
+                    : 'border-slate-200 hover:border-blue-300'
                 }`}
               >
-                <div>
-                  {/* Top Badge & Like */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {isSold ? (
-                        <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-extrabold text-slate-700">
-                          VENDIDO
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-700">
-                          DISPONIBLE
-                        </span>
-                      )}
-
-                      {item.faculty && (
-                        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
-                          {item.faculty}
-                        </span>
-                      )}
-
-                      {item.accepts_exchange && (
-                        <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">
-                          Intercambio
-                        </span>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => toggleFavorite(item.id)}
-                      aria-label="Favorito"
-                      className="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-500"
-                    >
-                      <Heart
-                        className={`size-5 transition-colors ${
-                          isFav ? 'fill-rose-500 text-rose-500' : ''
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Title & Description */}
-                  <h3 className="mt-3 text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-slate-500">
-                    {item.description}
-                  </p>
-
-                  {/* Meeting point */}
-                  {item.meeting_point && (
-                    <div className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500">
-                      <MapPin className="size-3.5 shrink-0 text-slate-400" />
-                      <span className="truncate">{item.meeting_point}</span>
+                {/* Product Image Section */}
+                <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center text-slate-300">
+                      <Package className="size-10" />
+                      <span className="text-[10px] text-slate-400">Sin foto</span>
                     </div>
                   )}
+
+                  {/* Badges on image */}
+                  <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1.5">
+                    {isSold ? (
+                      <span className="rounded-full bg-slate-900/80 px-2.5 py-0.5 text-[10px] font-extrabold text-white backdrop-blur-md">
+                        VENDIDO
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-emerald-600/90 px-2.5 py-0.5 text-[10px] font-extrabold text-white backdrop-blur-md">
+                        DISPONIBLE
+                      </span>
+                    )}
+
+                    {item.faculty && (
+                      <span className="rounded-full bg-blue-600/90 px-2.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md">
+                        {item.faculty}
+                      </span>
+                    )}
+
+                    {item.accepts_exchange && (
+                      <span className="rounded-full bg-purple-600/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md">
+                        Intercambio
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFavorite(item.id)
+                    }}
+                    aria-label="Favorito"
+                    className="absolute right-2.5 top-2.5 grid size-8 place-items-center rounded-full bg-white/90 text-slate-400 shadow-sm backdrop-blur-md transition-colors hover:bg-white hover:text-rose-500"
+                  >
+                    <Heart
+                      className={`size-4 transition-colors ${
+                        isFav ? 'fill-rose-500 text-rose-500' : ''
+                      }`}
+                    />
+                  </button>
                 </div>
 
-                {/* Footer Price & Actions */}
-                <div className="mt-5 border-t border-slate-100 pt-4">
-                  <div className="flex items-baseline justify-between mb-3">
-                    <span className="text-lg font-extrabold text-blue-600">
-                      {formatPrice(item.price_gs)}
-                    </span>
-                    <span className="text-[11px] font-medium text-slate-400">
-                      {item.condition === 'like_new'
-                        ? 'Como nuevo'
-                        : item.condition === 'new'
-                        ? 'Nuevo'
-                        : item.condition === 'good'
-                        ? 'Buen estado'
-                        : 'Usado'}
-                    </span>
+                {/* Card Content */}
+                <div className="p-4 flex flex-col flex-1 justify-between">
+                  <div>
+                    {/* Title & Description */}
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                      {item.title}
+                    </h3>
+                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">
+                      {item.description}
+                    </p>
+
+                    {/* VENDIDO POR - SELLER INFO WITH SVG */}
+                    <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-2.5 border border-slate-100">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <div className="grid size-7 place-items-center rounded-lg bg-blue-600 text-[10px] font-black text-white shrink-0 shadow-xs">
+                          {sellerName.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-black text-slate-800 truncate">
+                            Vendido por: {sellerName}
+                          </p>
+                          <p className="text-[10px] text-slate-500 truncate">
+                            {sellerCareer}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 border border-amber-200/80 text-[10px] font-black text-amber-800 shrink-0">
+                        <Star className="size-3 fill-amber-400 text-amber-400" />
+                        <span>{sellerRating.toFixed(1)}</span>
+                      </div>
+                    </div>
+
+                    {/* Meeting point */}
+                    {item.meeting_point && (
+                      <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+                        <MapPin className="size-3.5 shrink-0 text-blue-500" />
+                        <span className="truncate">{item.meeting_point}</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Action Buttons based on owner */}
-                  {isOwner ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => toggleStatus(item)}
-                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-colors ${
-                          isSold
-                            ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        <RefreshCw className="size-3.5" />
-                        {isSold ? 'Reactivar producto' : 'Marcar como Vendido'}
-                      </button>
+                  {/* Footer Price & Actions */}
+                  <div className="mt-4 border-t border-slate-100 pt-3">
+                    <div className="flex items-baseline justify-between mb-3">
+                      <span className="text-lg font-black text-blue-600">
+                        {formatPrice(item.price_gs)}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-400">
+                        {item.condition === 'like_new'
+                          ? 'Como nuevo'
+                          : item.condition === 'new'
+                          ? 'Nuevo'
+                          : item.condition === 'good'
+                          ? 'Buen estado'
+                          : 'Usado'}
+                      </span>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      {/* Integrated Internal Chat */}
-                      <button
-                        onClick={() => startChat(item)}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-sm shadow-blue-200 transition-colors hover:bg-blue-700"
-                      >
-                        <MessageCircle className="size-3.5" />
-                        Chatear en web
-                      </button>
 
-                      {/* Review Seller Button */}
-                      <button
-                        onClick={() => {
-                          setSelectedReviewListing(item)
-                          setReviewOpen(true)
-                        }}
-                        title="Calificar a este vendedor"
-                        className="flex size-9 items-center justify-center rounded-xl border border-slate-200 text-amber-500 transition-colors hover:bg-amber-50"
-                      >
-                        <Star className="size-4 fill-amber-400" />
-                      </button>
-                    </div>
-                  )}
+                    {/* Action Buttons based on owner */}
+                    {isOwner ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedEditListing(item)
+                            setEditOpen(true)
+                          }}
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2 text-xs font-bold text-white transition-colors hover:bg-slate-800"
+                        >
+                          <Edit className="size-3.5" />
+                          Editar
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleStatus(item)
+                          }}
+                          className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-colors ${
+                            isSold
+                              ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          <RefreshCw className="size-3.5" />
+                          {isSold ? 'Reactivar' : 'Vendido'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        {/* Integrated Internal Chat */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            startChat(item)
+                          }}
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-sm shadow-blue-200 transition-colors hover:bg-blue-700"
+                        >
+                          <MessageCircle className="size-3.5" />
+                          Chatear en web
+                        </button>
+
+                        {/* Review Seller Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedReviewListing(item)
+                            setReviewOpen(true)
+                          }}
+                          title="Calificar a este vendedor"
+                          className="flex size-9 items-center justify-center rounded-xl border border-slate-200 text-amber-500 transition-colors hover:bg-amber-50"
+                        >
+                          <Star className="size-4 fill-amber-400 text-amber-400" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </article>
             )
@@ -537,7 +621,43 @@ export default function ProductosPage() {
         </div>
       </main>
 
-      {/* Reusable Modals */}
+      {/* Product Detail Modal */}
+      <ProductModal
+        isOpen={productModalOpen}
+        onClose={() => {
+          setProductModalOpen(false)
+          setSelectedProduct(null)
+        }}
+        listing={selectedProduct}
+        currentUserId={currentUser?.id}
+        onOpenReview={(l) => {
+          setSelectedReviewListing(l as unknown as Listing)
+          setReviewOpen(true)
+        }}
+        onOpenEdit={(l) => {
+          setSelectedEditListing(l as unknown as Listing)
+          setEditOpen(true)
+        }}
+        onToggleStatus={(l) => toggleStatus(l as unknown as Listing)}
+      />
+
+      {/* Edit Listing Modal */}
+      {selectedEditListing && (
+        <EditListingModal
+          isOpen={editOpen}
+          onClose={() => {
+            setEditOpen(false)
+            setSelectedEditListing(null)
+          }}
+          listing={selectedEditListing}
+          onSuccess={() => {
+            setToastMsg('¡Producto actualizado correctamente!')
+            loadData()
+          }}
+        />
+      )}
+
+      {/* Publish Modal */}
       <PublishModal
         isOpen={publishOpen}
         onClose={() => setPublishOpen(false)}
@@ -547,6 +667,7 @@ export default function ProductosPage() {
         }}
       />
 
+      {/* Auth Modal */}
       <AuthModal
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
@@ -554,6 +675,7 @@ export default function ProductosPage() {
         onSuccess={() => loadData()}
       />
 
+      {/* Review Modal */}
       {selectedReviewListing && (
         <ReviewModal
           isOpen={reviewOpen}
@@ -562,11 +684,13 @@ export default function ProductosPage() {
             setSelectedReviewListing(null)
           }}
           sellerId={selectedReviewListing.seller_id}
-          sellerName="Estudiante UniMarket"
+          sellerName={selectedReviewListing.profiles?.full_name || 'Estudiante UniMarket'}
           listingId={selectedReviewListing.id}
           onSuccess={() => setToastMsg('¡Calificación enviada con éxito! Gracias por tu reseña.')}
         />
       )}
+
+      <BottomNav />
     </div>
   )
 }

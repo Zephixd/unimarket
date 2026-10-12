@@ -37,9 +37,33 @@ const categories = [
 ]
 
 const products = [
-  { name: 'Libro de Programación', detail: 'Ingeniería · UNA', price: '120.000', image: 'book', liked: false },
-  { name: 'Calculadora científica', detail: 'Ciencias Económicas · UCA', price: '80.000', image: 'calc', liked: true },
-  { name: 'Mochila universitaria', detail: 'Diseño · U. Columbia', price: '150.000', image: 'bag', liked: false },
+  {
+    name: 'Manual de Derecho Civil',
+    detail: 'Derecho · UCSI San Ignacio',
+    seller: 'Jesus Gonzalez',
+    rating: 4.9,
+    price: '85.000 Gs.',
+    image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
+    liked: false,
+  },
+  {
+    name: 'Ambo Clínico Blanco S',
+    detail: 'Enfermería · UCSI San Ignacio',
+    seller: 'Belen Villalba',
+    rating: 4.8,
+    price: '110.000 Gs.',
+    image: 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=600&auto=format&fit=crop&q=80',
+    liked: true,
+  },
+  {
+    name: 'ThinkPad T480 Core i5',
+    detail: 'Informática · UCSI San Ignacio',
+    seller: 'Luca Mosqueda',
+    rating: 4.6,
+    price: '1.850.000 Gs.',
+    image: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=600&auto=format&fit=crop&q=80',
+    liked: false,
+  },
 ]
 
 function Logo({ compact = false }: { compact?: boolean }) {
@@ -230,10 +254,14 @@ export default function LandingPage() {
                   <Link
                     key={product.name}
                     href="/productos"
-                    className="w-[126px] shrink-0"
+                    className="w-[136px] shrink-0 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-xs transition-transform hover:-translate-y-0.5"
                   >
-                    <div className="relative overflow-hidden rounded-xl">
-                      <ProductArtwork type={product.image} />
+                    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="h-full w-full object-cover"
+                      />
                       <button
                         aria-label={`Guardar ${product.name}`}
                         onClick={(e) => {
@@ -242,17 +270,24 @@ export default function LandingPage() {
                             current.map((value, itemIndex) => (itemIndex === index ? !value : value))
                           )
                         }}
-                        className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/90"
+                        className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-white/90 shadow-xs"
                       >
                         <Heart
-                          className={`size-3.5 ${
+                          className={`size-3 ${
                             liked[index] ? 'fill-orange-500 text-orange-500' : 'text-slate-600'
                           }`}
                         />
                       </button>
                     </div>
-                    <p className="mt-2 truncate text-[11px] font-semibold text-slate-800">{product.name}</p>
-                    <p className="mt-0.5 text-[11px] font-bold text-blue-600">G. {product.price}</p>
+                    <p className="mt-1.5 truncate text-[11px] font-bold text-slate-900">{product.name}</p>
+                    <div className="mt-0.5 flex items-center justify-between text-[10px]">
+                      <span className="truncate text-slate-500 font-medium">{product.seller}</span>
+                      <span className="flex items-center gap-0.5 font-bold text-amber-600">
+                        <Star className="size-2.5 fill-amber-400 text-amber-400" />
+                        {product.rating}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] font-black text-blue-600">{product.price}</p>
                   </Link>
                 ))}
               </div>

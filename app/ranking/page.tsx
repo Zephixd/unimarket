@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   Award,
   CheckCircle2,
+  Crown,
   Medal,
   MessageCircle,
   Package,
@@ -95,8 +96,9 @@ export default function RankingPage() {
                 <span>{Number(top3[1].avg_rating).toFixed(1)}</span>
               </div>
               <p className="text-[10px] text-slate-400">{top3[1].sales_count} ventas</p>
-              <div className="mt-3 w-full h-24 rounded-t-2xl bg-slate-200/80 border-t-4 border-slate-300 flex items-center justify-center font-black text-slate-400 text-lg">
-                🥈 Plata
+              <div className="mt-3 w-full h-24 rounded-t-2xl bg-slate-200/80 border-t-4 border-slate-300 flex items-center justify-center font-black text-slate-500 text-sm gap-1.5">
+                <Medal className="size-4 text-slate-400" />
+                <span>Plata · 2°</span>
               </div>
             </div>
 
@@ -106,8 +108,8 @@ export default function RankingPage() {
                 <div className="grid size-20 sm:size-24 place-items-center rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-200 text-2xl font-black text-amber-950 shadow-lg ring-4 ring-amber-300/40">
                   {top3[0].full_name[0]}
                 </div>
-                <div className="absolute -top-3 -right-2 grid size-8 place-items-center rounded-full bg-amber-400 text-sm font-black text-amber-950 shadow-md ring-2 ring-white">
-                  👑
+                <div className="absolute -top-3 -right-2 grid size-8 place-items-center rounded-full bg-amber-400 text-amber-950 shadow-md ring-2 ring-white">
+                  <Crown className="size-4 fill-amber-950 text-amber-950" />
                 </div>
               </div>
               <h3 className="text-sm sm:text-base font-extrabold text-slate-900 text-center truncate max-w-[120px] sm:max-w-[160px]">
@@ -118,8 +120,11 @@ export default function RankingPage() {
                 <span>{Number(top3[0].avg_rating).toFixed(1)}</span>
               </div>
               <p className="text-[11px] font-bold text-slate-500">{top3[0].sales_count} ventas concretadas</p>
-              <div className="mt-3 w-full h-32 rounded-t-2xl bg-amber-100 border-t-4 border-amber-400 flex flex-col items-center justify-center font-black text-amber-700 text-sm sm:text-base">
-                <span>🥇 1° Lugar</span>
+              <div className="mt-3 w-full h-32 rounded-t-2xl bg-amber-100 border-t-4 border-amber-400 flex flex-col items-center justify-center font-black text-amber-800 text-sm sm:text-base">
+                <div className="flex items-center gap-1.5">
+                  <Trophy className="size-4 text-amber-600 fill-amber-500" />
+                  <span>1° Lugar (Oro)</span>
+                </div>
                 <span className="text-[10px] font-medium text-amber-600">Vendedor Destacado</span>
               </div>
             </div>
@@ -142,8 +147,9 @@ export default function RankingPage() {
                 <span>{Number(top3[2].avg_rating).toFixed(1)}</span>
               </div>
               <p className="text-[10px] text-slate-400">{top3[2].sales_count} ventas</p>
-              <div className="mt-3 w-full h-16 rounded-t-2xl bg-amber-50/80 border-t-4 border-amber-600/40 flex items-center justify-center font-black text-amber-800 text-xs">
-                🥉 Bronce
+              <div className="mt-3 w-full h-16 rounded-t-2xl bg-amber-50/80 border-t-4 border-amber-600/40 flex items-center justify-center font-black text-amber-800 text-xs gap-1">
+                <Award className="size-3.5 text-amber-700" />
+                <span>Bronce · 3°</span>
               </div>
             </div>
           </div>

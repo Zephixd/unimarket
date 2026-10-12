@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Bell,
+  Gift,
   Heart,
   LogOut,
   Menu,
@@ -13,6 +14,7 @@ import {
   Plus,
   ShoppingBag,
   Sparkles,
+  Trophy,
   User,
   X,
 } from 'lucide-react'
@@ -112,7 +114,8 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
               pathname.startsWith('/ranking') ? 'font-bold text-blue-600' : ''
             }`}
           >
-            <span>🏆 Ranking UCSI</span>
+            <Trophy className="size-4 text-amber-500" />
+            <span>Ranking UCSI</span>
           </Link>
           <Link
             href="/mensajes"
@@ -234,46 +237,52 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
             <Link
               href="/ranking"
               onClick={() => setMobileMenu(false)}
-              className="rounded-xl px-3 py-2 font-medium text-amber-600 hover:bg-slate-50"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 font-medium text-amber-600 hover:bg-slate-50"
             >
-              🏆 Ranking de Vendedores
+              <Trophy className="size-4 text-amber-500" />
+              <span>Ranking de Vendedores</span>
             </Link>
             <Link
               href="/mensajes"
               onClick={() => setMobileMenu(false)}
-              className="rounded-xl px-3 py-2 hover:bg-slate-50"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-slate-50"
             >
-              Mensajes y Chat
+              <MessageCircle className="size-4 text-blue-600" />
+              <span>Mensajes y Chat</span>
             </Link>
             <Link
               href="/invitar"
               onClick={() => setMobileMenu(false)}
-              className="rounded-xl px-3 py-2 hover:bg-slate-50"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-slate-50"
             >
-              🎁 Invitar Amigos (Insignias)
+              <Gift className="size-4 text-indigo-500" />
+              <span>Invitar Amigos (Insignias)</span>
             </Link>
             <Link
               href="/favoritos"
               onClick={() => setMobileMenu(false)}
-              className="rounded-xl px-3 py-2 hover:bg-slate-50"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-slate-50"
             >
-              ❤️ Mis Favoritos
+              <Heart className="size-4 fill-rose-500 text-rose-500" />
+              <span>Mis Favoritos</span>
             </Link>
             <Link
               href="/notificaciones"
               onClick={() => setMobileMenu(false)}
-              className="rounded-xl px-3 py-2 hover:bg-slate-50"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-slate-50"
             >
-              🔔 Notificaciones
+              <Bell className="size-4 text-blue-500" />
+              <span>Notificaciones</span>
             </Link>
             {user ? (
               <>
                 <Link
                   href="/perfil"
                   onClick={() => setMobileMenu(false)}
-                  className="rounded-xl px-3 py-2 font-semibold text-slate-900 hover:bg-slate-50"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 font-semibold text-slate-900 hover:bg-slate-50"
                 >
-                  👤 Mi Perfil ({profileName || user.email?.split('@')[0]})
+                  <User className="size-4 text-slate-700" />
+                  <span>Mi Perfil ({profileName || user.email?.split('@')[0]})</span>
                 </Link>
                 <button
                   onClick={() => {

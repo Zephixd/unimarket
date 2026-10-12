@@ -284,8 +284,9 @@ export default function ProductoDetailPage() {
                   <MapPin className="size-4 text-red-500 shrink-0" />
                   <span>{listing.meeting_point || 'Biblioteca Central UCSI Campus San Ignacio'}</span>
                 </div>
-                <p className="mt-2 text-[11px] text-blue-700/80">
-                  📍 Zona segura y transitada recomendada para concretar la entrega e inspección del artículo.
+                <p className="mt-2 text-[11px] text-blue-700/80 flex items-center gap-1.5">
+                  <ShieldCheck className="size-3.5 text-blue-600 shrink-0" />
+                  <span>Zona segura y transitada recomendada para concretar la entrega e inspección del artículo.</span>
                 </p>
               </div>
 
