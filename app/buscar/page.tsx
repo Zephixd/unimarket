@@ -77,6 +77,8 @@ export default function BuscarPage() {
   const [selectedPubType, setSelectedPubType] = useState('all') // all, sale, exchange, both
   const [selectedCondition, setSelectedCondition] = useState('all') // all, new, like_new, good, fair
   const [selectedAvailability, setSelectedAvailability] = useState('all') // all, active, reserved, sold
+  const [selectedFaculty, setSelectedFaculty] = useState('all')
+  const [sortBy, setSortBy] = useState<'recent' | 'price_asc' | 'price_desc'>('recent')
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [showFilters, setShowFilters] = useState(false)
@@ -160,12 +162,22 @@ export default function BuscarPage() {
         if (itemStatus !== selectedAvailability) return false
       }
 
+      // Faculty / Carrera
+      if (selectedFaculty !== 'all') {
+        const facLower = (item.faculty || item.profiles?.career_name || '').toLowerCase()
+        if (!facLower.includes(selectedFaculty.toLowerCase())) return false
+      }
+
       // Price Range
       const min = minPrice ? Number(minPrice) : 0
       const max = maxPrice ? Number(maxPrice) : Infinity
       if (item.price_gs < min || item.price_gs > max) return false
 
       return true
+    }).sort((a, b) => {
+      if (sortBy === 'price_asc') return (a.price_gs || 0) - (b.price_gs || 0)
+      if (sortBy === 'price_desc') return (b.price_gs || 0) - (a.price_gs || 0)
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
     })
   }, [
     listings,
@@ -174,6 +186,8 @@ export default function BuscarPage() {
     selectedPubType,
     selectedCondition,
     selectedAvailability,
+    selectedFaculty,
+    sortBy,
     minPrice,
     maxPrice,
   ])
@@ -190,6 +204,8 @@ export default function BuscarPage() {
     setSelectedPubType('all')
     setSelectedCondition('all')
     setSelectedAvailability('all')
+    setSelectedFaculty('all')
+    setSortBy('recent')
     setMinPrice('')
     setMaxPrice('')
     setSearch('')
@@ -290,7 +306,7 @@ export default function BuscarPage() {
                   </button>
                 </div>
 
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
                   {/* Tipo de publicación */}
                   <div>
                     <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
@@ -343,6 +359,41 @@ export default function BuscarPage() {
                     </select>
                   </div>
 
+                  {/* Carrera o Facultad */}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                      Carrera / Facultad
+                    </label>
+                    <select
+                      value={selectedFaculty}
+                      onChange={(e) => setSelectedFaculty(e.target.value)}
+                      className="mt-1 h-9 w-full rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-800 outline-none"
+                    >
+                      <option value="all">Todas las carreras</option>
+                      <option value="Derecho">Derecho</option>
+                      <option value="Enfermería">Enfermería</option>
+                      <option value="Administración">Administración</option>
+                      <option value="Informática">Informática</option>
+                      <option value="Contabilidad">Contabilidad</option>
+                    </select>
+                  </div>
+
+                  {/* Ordenar por */}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                      Ordenar por
+                    </label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="mt-1 h-9 w-full rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-800 outline-none"
+                    >
+                      <option value="recent">Más recientes</option>
+                      <option value="price_asc">Menor precio</option>
+                      <option value="price_desc">Mayor precio</option>
+                    </select>
+                  </div>
+
                   {/* Rango de precio */}
                   <div>
                     <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
@@ -366,6 +417,22 @@ export default function BuscarPage() {
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* Acciones Aplicar y Limpiar */}
+                <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
+                  <button
+                    onClick={resetFilters}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                  >
+                    Limpiar filtros
+                  </button>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition"
+                  >
+                    Aplicar filtros
+                  </button>
                 </div>
               </div>
             )}

@@ -110,6 +110,7 @@ export default function RegisterPage() {
           full_name: fullName,
           university_name: university,
           career_name: career,
+          academic_year: academicPeriod,
           avatar_url: avatarUrl || null,
         })
 

@@ -37,6 +37,7 @@ import { Navbar } from '@/components/navbar'
 import { BottomNav } from '@/components/bottom-nav'
 import { AuthGuard } from '@/components/auth-guard'
 import { PublishModal } from '@/components/publish-modal'
+import { EditListingModal } from '@/components/edit-listing-modal'
 import { createClient } from '@/lib/supabase/client'
 
 type Profile = {
@@ -59,11 +60,17 @@ type Profile = {
 type UserListing = {
   id: string
   title: string
+  description?: string
   price_gs: number
   condition: string
   faculty: string | null
   meeting_point: string | null
+  category_id?: string | null
   status: string
+  image_url?: string | null
+  publication_type?: string | null
+  exchange_for?: string | null
+  accepts_exchange?: boolean
   created_at: string
 }
 
@@ -119,6 +126,10 @@ export default function PerfilPage() {
 
   // Modals
   const [publishOpen, setPublishOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [selectedEditListing, setSelectedEditListing] = useState<any>(null)
+  const [listingToDelete, setListingToDelete] = useState<UserListing | null>(null)
+  const [deletingListing, setDeletingListing] = useState(false)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
 
   async function loadProfile() {
@@ -147,7 +158,7 @@ export default function PerfilPage() {
     // Load listings
     const { data: listingsData } = await supabase
       .from('listings')
-      .select('id,title,price_gs,condition,faculty,meeting_point,status,created_at')
+      .select('*')
       .eq('seller_id', currentUserId)
       .order('created_at', { ascending: false })
 
@@ -227,6 +238,31 @@ export default function PerfilPage() {
     } else {
       setToastMsg('Error al guardar: ' + error.message)
     }
+  }
+
+  async function updateListingStatus(listingId: string, newStatus: string) {
+    const { error } = await supabase.from('listings').update({ status: newStatus }).eq('id', listingId)
+    if (!error) {
+      setMyListings((prev) =>
+        prev.map((item) => (item.id === listingId ? { ...item, status: newStatus } : item))
+      )
+      const label = newStatus === 'active' ? 'Disponible' : newStatus === 'reserved' ? 'Reservado' : 'Vendido'
+      setToastMsg(`Estado actualizado a: ${label}`)
+    }
+  }
+
+  async function handleDeleteListing() {
+    if (!listingToDelete) return
+    setDeletingListing(true)
+    const { error } = await supabase.from('listings').delete().eq('id', listingToDelete.id)
+    if (!error) {
+      setMyListings((prev) => prev.filter((item) => item.id !== listingToDelete.id))
+      setToastMsg('¡Publicación eliminada definitivamente!')
+      setListingToDelete(null)
+    } else {
+      setToastMsg('Error al eliminar: ' + error.message)
+    }
+    setDeletingListing(false)
   }
 
   async function toggleListingStatus(id: string, currentStatus: string) {
@@ -516,6 +552,7 @@ export default function PerfilPage() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {myListings.map((item) => {
                 const isSold = item.status === 'sold'
+                const isReserved = item.status === 'reserved'
                 return (
                   <div
                     key={item.id}
@@ -527,10 +564,14 @@ export default function PerfilPage() {
                       <div className="flex items-center justify-between">
                         <span
                           className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                            isSold ? 'bg-slate-200 text-slate-700' : 'bg-emerald-50 text-emerald-700'
+                            isSold
+                              ? 'bg-slate-200 text-slate-700'
+                              : isReserved
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-emerald-50 text-emerald-700'
                           }`}
                         >
-                          {isSold ? 'VENDIDO' : 'DISPONIBLE'}
+                          {isSold ? 'VENDIDO' : isReserved ? 'RESERVADO' : 'DISPONIBLE'}
                         </span>
                         <span className="text-[10px] text-slate-400">
                           {new Date(item.created_at).toLocaleDateString('es-PY')}
@@ -550,17 +591,37 @@ export default function PerfilPage() {
                       )}
                     </div>
 
-                    <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
+                    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                      {/* Editar */}
                       <button
-                        onClick={() => toggleListingStatus(item.id, item.status)}
-                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition ${
-                          isSold
-                            ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
+                        onClick={() => {
+                          setSelectedEditListing(item)
+                          setEditModalOpen(true)
+                        }}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2 px-3 text-xs font-bold text-white transition hover:bg-slate-800"
                       >
-                        <RefreshCw className="size-3.5" />
-                        {isSold ? 'Reactivar Producto' : 'Marcar como Vendido'}
+                        <Edit3 className="size-3.5" />
+                        Editar
+                      </button>
+
+                      {/* Cambiar Estado */}
+                      <select
+                        value={item.status || 'active'}
+                        onChange={(e) => updateListingStatus(item.id, e.target.value)}
+                        className="h-8.5 rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 outline-none hover:border-slate-300"
+                      >
+                        <option value="active">Disponible</option>
+                        <option value="reserved">Reservado</option>
+                        <option value="sold">Vendido</option>
+                      </select>
+
+                      {/* Eliminar con Confirmación */}
+                      <button
+                        onClick={() => setListingToDelete(item)}
+                        className="grid size-8.5 place-items-center rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
+                        title="Eliminar publicación"
+                      >
+                        <Trash2 className="size-3.5" />
                       </button>
                     </div>
                   </div>
@@ -803,6 +864,57 @@ export default function PerfilPage() {
                   className="h-11 flex-1 rounded-xl bg-rose-600 text-xs font-black text-white shadow-md shadow-rose-600/20 hover:bg-rose-700 disabled:opacity-50 transition"
                 >
                   {deletingAccount ? 'Eliminando...' : 'Sí, eliminar cuenta'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Listing Modal */}
+        {selectedEditListing && (
+          <EditListingModal
+            isOpen={editModalOpen}
+            onClose={() => {
+              setEditModalOpen(false)
+              setSelectedEditListing(null)
+            }}
+            listing={selectedEditListing}
+            onSuccess={() => {
+              setToastMsg('¡Publicación actualizada con éxito!')
+              loadProfile()
+            }}
+          />
+        )}
+
+        {/* Delete Listing Confirmation Modal */}
+        {listingToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in">
+            <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-center">
+              <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-100">
+                <AlertTriangle className="size-6" />
+              </div>
+              <h3 className="mt-4 text-lg font-black text-slate-950">
+                ¿Eliminar publicación?
+              </h3>
+              <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                ¿Estás seguro de que deseas eliminar «{listingToDelete.title}»? Esta acción no se puede deshacer.
+              </p>
+              <div className="mt-6 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setListingToDelete(null)}
+                  disabled={deletingListing}
+                  className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteListing}
+                  disabled={deletingListing}
+                  className="flex-1 rounded-xl bg-rose-600 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-rose-700 disabled:opacity-50 transition"
+                >
+                  {deletingListing ? 'Eliminando...' : 'Sí, eliminar'}
                 </button>
               </div>
             </div>
