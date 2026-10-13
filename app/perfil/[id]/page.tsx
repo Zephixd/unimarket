@@ -417,7 +417,7 @@ export default function PublicProfilePage() {
                           onClick={() => {
                             setSelectedProduct({
                               ...l,
-                              profiles: profile,
+                              profiles: profile as any,
                             })
                             setProductModalOpen(true)
                           }}

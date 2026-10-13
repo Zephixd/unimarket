@@ -101,7 +101,7 @@ export default function ProductoDetailPage() {
       setListing({
         ...data,
         seller: profile || undefined,
-        images: imageList.filter(Boolean),
+        images: imageList.filter(Boolean) as string[],
       })
     }
     setLoading(false)
@@ -220,7 +220,7 @@ export default function ProductoDetailPage() {
   }
 
   const isOwner = currentUser?.id === listing.seller_id
-  const images = listing.images && listing.images.length > 0 ? listing.images : [listing.image_url]
+  const images = (listing.images && listing.images.length > 0 ? listing.images : [listing.image_url]).filter(Boolean) as string[]
 
   return (
     <div className="min-h-screen bg-slate-50/60 pb-24 text-slate-950 md:pb-12">

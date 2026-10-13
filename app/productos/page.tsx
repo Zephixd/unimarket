@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   CheckSquare,
   Clock,
+  Edit,
   Filter,
   Heart,
   Laptop,
@@ -75,8 +76,13 @@ const CATEGORIES = [
   { id: 'fe8651ac-28d0-4617-8402-f04844a98743', label: 'Uniformes' },
 ]
 
-function formatPrice(value: number) {
-  return `${new Intl.NumberFormat('es-PY').format(value)} Gs.`
+function formatPrice(value: number | undefined | null) {
+  try {
+    const num = Number(value) || 0
+    return `${new Intl.NumberFormat('es-PY').format(num)} Gs.`
+  } catch {
+    return '0 Gs.'
+  }
 }
 
 export default function ProductosPage() {
@@ -234,12 +240,13 @@ export default function ProductosPage() {
   const filtered = useMemo(() => {
     return listings
       .filter((item) => {
+        const q = search.trim().toLowerCase()
         const matchesSearch =
-          search.trim() === '' ||
-          item.title.toLowerCase().includes(search.toLowerCase()) ||
-          item.description?.toLowerCase().includes(search.toLowerCase()) ||
-          (item.faculty && item.faculty.toLowerCase().includes(search.toLowerCase())) ||
-          (item.meeting_point && item.meeting_point.toLowerCase().includes(search.toLowerCase()))
+          q === '' ||
+          Boolean(item.title && item.title.toLowerCase().includes(q)) ||
+          Boolean(item.description && item.description.toLowerCase().includes(q)) ||
+          Boolean(item.faculty && item.faculty.toLowerCase().includes(q)) ||
+          Boolean(item.meeting_point && item.meeting_point.toLowerCase().includes(q))
 
         const matchesCat = selectedCategory === 'all' || item.category_id === selectedCategory
         const matchesCond = selectedCondition === 'all' || item.condition === selectedCondition
@@ -248,8 +255,8 @@ export default function ProductosPage() {
         return matchesSearch && matchesCat && matchesCond && matchesEx
       })
       .sort((a, b) => {
-        if (sortBy === 'price_asc') return a.price_gs - b.price_gs
-        if (sortBy === 'price_desc') return b.price_gs - a.price_gs
+        if (sortBy === 'price_asc') return (a.price_gs || 0) - (b.price_gs || 0)
+        if (sortBy === 'price_desc') return (b.price_gs || 0) - (a.price_gs || 0)
         return 0
       })
   }, [listings, search, selectedCategory, selectedCondition, onlyExchange, sortBy])
@@ -413,7 +420,7 @@ export default function ProductosPage() {
             const seller = item.profiles || null
             const sellerName = seller?.full_name || 'Estudiante UCSI'
             const sellerCareer = seller?.career_name || item.faculty || 'UCSI San Ignacio'
-            const sellerRating = seller?.rating ?? 4.8
+            const sellerRating = Number(seller?.rating ?? 4.8)
 
             return (
               <article
@@ -499,7 +506,7 @@ export default function ProductosPage() {
                     <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                       <div className="flex items-center gap-2 overflow-hidden">
                         <div className="grid size-7 place-items-center rounded-lg bg-blue-600 text-[10px] font-black text-white shrink-0 shadow-xs">
-                          {sellerName.substring(0, 2).toUpperCase()}
+                          {(sellerName || 'UC').slice(0, 2).toUpperCase()}
                         </div>
                         <div className="min-w-0">
                           <p className="text-[11px] font-black text-slate-800 truncate">
@@ -512,7 +519,7 @@ export default function ProductosPage() {
                       </div>
                       <div className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 border border-amber-200/80 text-[10px] font-black text-amber-800 shrink-0">
                         <Star className="size-3 fill-amber-400 text-amber-400" />
-                        <span>{sellerRating.toFixed(1)}</span>
+                        <span>{(sellerRating || 4.8).toFixed(1)}</span>
                       </div>
                     </div>
 

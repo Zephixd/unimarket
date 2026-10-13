@@ -193,7 +193,9 @@ export default function RankingPage() {
                     <div className="flex items-center gap-1.5">
                       <p className="text-sm font-bold text-slate-900">{seller.full_name}</p>
                       {seller.verified_email && (
-                        <ShieldCheck className="size-3.5 text-emerald-600" title="Verificado UCSI" />
+                        <span title="Verificado UCSI">
+                          <ShieldCheck className="size-3.5 text-emerald-600" />
+                        </span>
                       )}
                     </div>
                     <p className="text-xs text-slate-500">
