@@ -143,7 +143,13 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
         <div className="hidden items-center gap-3 md:flex">
           {onOpenPublish && (
             <button
-              onClick={onOpenPublish}
+              onClick={() => {
+                if (!user) {
+                  onOpenAuth?.('login')
+                  return
+                }
+                onOpenPublish()
+              }}
               className="flex items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-orange-200 transition-all hover:bg-orange-600"
             >
               <Plus className="size-4" /> Publicar
@@ -193,7 +199,13 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
         <div className="flex items-center gap-2 md:hidden">
           {onOpenPublish && (
             <button
-              onClick={onOpenPublish}
+              onClick={() => {
+                if (!user) {
+                  onOpenAuth?.('login')
+                  return
+                }
+                onOpenPublish()
+              }}
               className="flex size-9 items-center justify-center rounded-xl bg-orange-500 text-white"
             >
               <Plus className="size-5" />

@@ -125,15 +125,44 @@ export default function LandingPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setUser({ id: data.user.id, email: data.user.email })
+      } else {
+        setUser(null)
       }
     })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({ id: session.user.id, email: session.user.email })
+      } else {
+        setUser(null)
+      }
+    })
+
+    return () => listener.subscription.unsubscribe()
   }, [])
+
+  function handleOpenPublish() {
+    if (!user) {
+      setAuthMode('login')
+      setAuthOpen(true)
+      return
+    }
+    setPublishOpen(true)
+  }
+
+  function handleExploreClick(e: React.MouseEvent) {
+    if (!user) {
+      e.preventDefault()
+      setAuthMode('login')
+      setAuthOpen(true)
+    }
+  }
 
   return (
     <main className="min-h-screen overflow-hidden bg-white text-slate-950">
       {/* Navbar with module links */}
       <Navbar
-        onOpenPublish={() => setPublishOpen(true)}
+        onOpenPublish={handleOpenPublish}
         onOpenAuth={(mode) => {
           setAuthMode(mode)
           setAuthOpen(true)
@@ -167,12 +196,13 @@ export default function LandingPage() {
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/productos"
+              onClick={handleExploreClick}
               className="group inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-6 text-base font-semibold text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl"
             >
               Explorar Catálogo <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <button
-              onClick={() => setPublishOpen(true)}
+              onClick={handleOpenPublish}
               className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50"
             >
               Publicar producto
@@ -416,7 +446,7 @@ export default function LandingPage() {
       {/* Floating Action Button */}
       <button
         aria-label="Publicar un producto"
-        onClick={() => setPublishOpen(true)}
+        onClick={handleOpenPublish}
         className="fixed bottom-5 right-5 z-30 flex h-14 items-center gap-2 rounded-2xl bg-orange-500 px-5 font-semibold text-white shadow-xl shadow-orange-200 transition-all hover:-translate-y-1 hover:bg-orange-600 sm:bottom-8 sm:right-8"
       >
         <Plus className="size-5" /> <span className="hidden sm:inline">Publicar producto</span>

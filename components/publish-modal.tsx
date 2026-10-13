@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import {
   Camera,
   Image as ImageIcon,
@@ -11,6 +11,9 @@ import {
   DollarSign,
   AlertCircle,
   CheckCircle2,
+  Lock,
+  LogIn,
+  ShieldCheck,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { OFFICIAL_CATEGORIES } from '@/lib/categories'
@@ -35,7 +38,23 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
   const [imageUrl, setImageUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const supabase = createClient()
+
+  useEffect(() => {
+    if (isOpen) {
+      setCheckingAuth(true)
+      supabase.auth.getUser().then(({ data }) => {
+        if (data.user) {
+          setCurrentUser({ id: data.user.id, email: data.user.email })
+        } else {
+          setCurrentUser(null)
+        }
+        setCheckingAuth(false)
+      })
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -57,7 +76,11 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
 
     try {
       const { data: authData } = await supabase.auth.getUser()
-      const sellerId = authData.user?.id || '03d5a087-5423-4c25-8df1-91afbe92728b' // Jesus Gonzalez fallback
+      if (!authData.user) {
+        setErrorMsg('Debes iniciar sesión para publicar un producto.')
+        return
+      }
+      const sellerId = authData.user.id
       const numericPrice = Number(price.replace(/[^0-9]/g, ''))
 
       const { data: newListing, error } = await supabase
@@ -96,6 +119,39 @@ export function PublishModal({ isOpen, onClose, onSuccess }: PublishModalProps) 
     } finally {
       setLoading(false)
     }
+  }
+
+  if (!checkingAuth && !currentUser) {
+    return (
+      <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm">
+        <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl text-center sm:p-8 animate-in fade-in">
+          <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-amber-100 text-amber-700 shadow-sm">
+            <Lock className="size-8" />
+          </div>
+          <h2 className="mt-4 text-xl font-black text-slate-950">Acceso Requerido</h2>
+          <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+            Debes iniciar sesión con tu cuenta de UCSI Campus San Ignacio para publicar artículos en el marketplace.
+          </p>
+          <div className="mt-6 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                onClose()
+                window.location.href = '/registro'
+              }}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 transition"
+            >
+              <LogIn className="size-4" /> Iniciar Sesión / Registrarme
+            </button>
+            <button
+              onClick={onClose}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
