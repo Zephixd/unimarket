@@ -17,9 +17,13 @@ import {
   Sparkles,
   Star,
   User,
+  Flag,
+  Handshake,
 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { BottomNav } from '@/components/bottom-nav'
+import { AuthGuard } from '@/components/auth-guard'
+import { ReportModal } from '@/components/report-modal'
 import { EditListingModal } from '@/components/edit-listing-modal'
 import { createClient } from '@/lib/supabase/client'
 
@@ -125,6 +129,35 @@ export default function ProductoDetailPage() {
     } else {
       navigator.clipboard.writeText(window.location.href)
       setToastMsg('¡Enlace copiado al portapapeles!')
+    }
+  }
+
+  const [reportOpen, setReportOpen] = useState(false)
+  const [creatingDeal, setCreatingDeal] = useState(false)
+
+  async function handleCreateOperation() {
+    if (!currentUser) {
+      router.push('/registro')
+      return
+    }
+
+    setCreatingDeal(true)
+    try {
+      await supabase.from('operations').insert({
+        listing_id: listing?.id,
+        buyer_id: currentUser.id,
+        seller_id: listing?.seller_id,
+        status: 'iniciada',
+        payment_method: 'campus_cash',
+        meeting_point: listing?.meeting_point || 'Biblioteca Central UCSI Campus San Ignacio',
+        price_gs: listing?.price_gs,
+        notes: 'Operación iniciada para acordar entrega en campus.',
+      })
+      router.push('/operaciones')
+    } catch {
+      router.push('/operaciones')
+    } finally {
+      setCreatingDeal(false)
     }
   }
 

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { BottomNav } from '@/components/bottom-nav'
+import { AuthGuard } from '@/components/auth-guard'
 import { createClient } from '@/lib/supabase/client'
 
 type SellerRanking = {
@@ -58,8 +59,9 @@ export default function RankingPage() {
   const rest = ranking.slice(3)
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-24 text-slate-950 md:pb-12">
-      <Navbar />
+    <AuthGuard moduleName="el ranking de vendedores de UCSI">
+      <div className="min-h-screen bg-slate-50/60 pb-24 text-slate-950 md:pb-12">
+        <Navbar />
 
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
@@ -212,10 +214,10 @@ export default function RankingPage() {
                   </div>
 
                   <Link
-                    href={`/productos?search=${encodeURIComponent(seller.full_name)}`}
-                    className="hidden sm:inline-flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-blue-600 hover:text-white transition-colors"
+                    href={`/perfil/${seller.seller_id}`}
+                    className="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-blue-600 hover:text-white transition-colors"
                   >
-                    <Package className="size-3.5" /> Ver productos
+                    <User className="size-3.5" /> Ver perfil
                   </Link>
                 </div>
               </div>
@@ -226,5 +228,6 @@ export default function RankingPage() {
 
       <BottomNav />
     </div>
+    </AuthGuard>
   )
 }

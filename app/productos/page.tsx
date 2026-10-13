@@ -35,6 +35,7 @@ import { AuthModal } from '@/components/auth-modal'
 import { ProductModal } from '@/components/product-modal'
 import { EditListingModal } from '@/components/edit-listing-modal'
 import { BottomNav } from '@/components/bottom-nav'
+import { AuthGuard } from '@/components/auth-guard'
 import { createClient } from '@/lib/supabase/client'
 
 type Listing = {
@@ -254,7 +255,8 @@ export default function ProductosPage() {
   }, [listings, search, selectedCategory, selectedCondition, onlyExchange, sortBy])
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-20 text-slate-950">
+    <AuthGuard moduleName="el catálogo de productos de UniMarket">
+      <div className="min-h-screen bg-slate-50/60 pb-20 text-slate-950">
       <Navbar
         onOpenPublish={() => setPublishOpen(true)}
         onOpenAuth={(mode) => {
@@ -692,5 +694,6 @@ export default function ProductosPage() {
 
       <BottomNav />
     </div>
+    </AuthGuard>
   )
 }

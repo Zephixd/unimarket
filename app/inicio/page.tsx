@@ -18,9 +18,11 @@ import {
 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { BottomNav } from '@/components/bottom-nav'
+import { AuthGuard } from '@/components/auth-guard'
 import { PublishModal } from '@/components/publish-modal'
 import { ProductModal, ProductModalListing } from '@/components/product-modal'
 import { createClient } from '@/lib/supabase/client'
+import { OFFICIAL_CATEGORIES } from '@/lib/categories'
 
 type Listing = {
   id: string
@@ -83,7 +85,8 @@ export default function InicioPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-24 text-slate-950 md:pb-12">
+    <AuthGuard moduleName="el inicio de UniMarket">
+      <div className="min-h-screen bg-slate-50/60 pb-24 text-slate-950 md:pb-12">
       {/* Top Header with small logo, notifications bell, and profile picture */}
       <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 px-4 py-3 backdrop-blur-md sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
@@ -279,5 +282,6 @@ export default function InicioPage() {
       <PublishModal isOpen={publishOpen} onClose={() => setPublishOpen(false)} />
       <BottomNav onOpenPublish={() => setPublishOpen(true)} />
     </div>
+    </AuthGuard>
   )
 }

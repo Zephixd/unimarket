@@ -19,8 +19,12 @@ import {
   X,
   Edit,
   ExternalLink,
+  Flag,
+  ArrowRightLeft,
+  Handshake,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { ReportModal } from '@/components/report-modal'
 
 export type ProductModalListing = {
   id: string
@@ -73,6 +77,8 @@ export function ProductModal({
   const supabase = createClient()
   const [copied, setCopied] = useState(false)
   const [startingChat, setStartingChat] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [creatingDeal, setCreatingDeal] = useState(false)
 
   if (!isOpen || !listing) return null
 
@@ -86,18 +92,52 @@ export function ProductModal({
 
   const conditionLabel =
     listing.condition === 'like_new'
-      ? 'Como nuevo'
+      ? 'Muy buen estado'
       : listing.condition === 'new'
       ? 'Nuevo'
       : listing.condition === 'good'
       ? 'Buen estado'
-      : 'Usado'
+      : 'Aceptable'
 
   const handleShare = () => {
     const url = `${window.location.origin}/producto/${listing.id}`
     navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleCreateOperation = async () => {
+    if (!currentUserId) {
+      router.push(`/producto/${listing.id}`)
+      return
+    }
+
+    setCreatingDeal(true)
+    try {
+      // Create operation entry in database
+      const { data: opData } = await supabase
+        .from('operations')
+        .insert({
+          listing_id: listing.id,
+          buyer_id: currentUserId,
+          seller_id: listing.seller_id,
+          status: 'iniciada',
+          payment_method: 'campus_cash',
+          meeting_point: listing.meeting_point || 'Biblioteca Central UCSI Campus San Ignacio',
+          price_gs: listing.price_gs,
+          notes: 'Operación iniciada para entrega y pago en campus.',
+        })
+        .select()
+        .single()
+
+      onClose()
+      router.push('/operaciones')
+    } catch {
+      onClose()
+      router.push('/operaciones')
+    } finally {
+      setCreatingDeal(false)
+    }
   }
 
   const handleStartChat = async () => {
@@ -243,18 +283,33 @@ export function ProductModal({
 
           {/* SELLER INFO CARD (Vendido por) */}
           <div className="mt-5 rounded-2xl border border-slate-200/90 bg-slate-50/70 p-4">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Información del Vendedor
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Información del Vendedor
+              </span>
+              <Link
+                href={`/perfil/${listing.seller_id}`}
+                onClick={onClose}
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 underline"
+              >
+                Ver perfil
+              </Link>
+            </div>
 
             <div className="mt-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="grid size-12 place-items-center rounded-2xl bg-blue-600 font-black text-white shadow-sm shadow-blue-300">
+              <Link
+                href={`/perfil/${listing.seller_id}`}
+                onClick={onClose}
+                className="flex items-center gap-3 group"
+              >
+                <div className="grid size-12 place-items-center rounded-2xl bg-blue-600 font-black text-white shadow-sm shadow-blue-300 group-hover:bg-blue-700 transition">
                   {sellerName.substring(0, 2).toUpperCase()}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-black text-slate-900">{sellerName}</span>
+                    <span className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition">
+                      {sellerName}
+                    </span>
                     <span
                       title="Estudiante Verificado UCSI"
                       className="inline-flex items-center text-blue-600"
@@ -267,7 +322,7 @@ export function ProductModal({
                     Universidad Católica Campus San Ignacio (UCSI)
                   </p>
                 </div>
-              </div>
+              </Link>
 
               {/* Rating box with SVG Star */}
               <div className="flex flex-col items-end">
@@ -283,7 +338,7 @@ export function ProductModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-5">
+          <div className="mt-6 flex flex-wrap items-center gap-2.5 border-t border-slate-100 pt-5">
             {isOwner ? (
               <>
                 {onOpenEdit && (
@@ -319,12 +374,21 @@ export function ProductModal({
             ) : (
               <>
                 <button
+                  onClick={handleCreateOperation}
+                  disabled={creatingDeal || isSold}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-black text-white shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <Handshake className="size-4" />
+                  {creatingDeal ? 'Iniciando...' : 'Comprar / Tratar'}
+                </button>
+
+                <button
                   onClick={handleStartChat}
                   disabled={startingChat || isSold}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-3 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 disabled:opacity-50"
                 >
                   <MessageCircle className="size-4" />
-                  {startingChat ? 'Abriendo Chat...' : 'Chatear con el Vendedor'}
+                  {startingChat ? 'Abriendo...' : 'Chatear'}
                 </button>
 
                 {onOpenReview && (
@@ -334,12 +398,20 @@ export function ProductModal({
                       onOpenReview(listing)
                     }}
                     title="Calificar a este vendedor"
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-xs font-bold text-amber-600 transition-all hover:bg-amber-50"
+                    className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-bold text-amber-600 transition-all hover:bg-amber-50"
                   >
                     <Star className="size-4 fill-amber-400 text-amber-400" />
                     <span className="hidden sm:inline">Calificar</span>
                   </button>
                 )}
+
+                <button
+                  onClick={() => setReportOpen(true)}
+                  title="Reportar publicación"
+                  className="grid size-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                >
+                  <Flag className="size-4" />
+                </button>
               </>
             )}
 
@@ -368,6 +440,14 @@ export function ProductModal({
           )}
         </div>
       </div>
+
+      <ReportModal
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="listing"
+        targetId={listing.id}
+        targetTitle={listing.title}
+      />
     </div>
   )
 }

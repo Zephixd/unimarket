@@ -1,13 +1,25 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
-import { Check, ShieldCheck, Sparkles, Star, User, X, Zap } from 'lucide-react'
+import {
+  Check,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  User,
+  X,
+  Zap,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type AuthModalProps = {
   isOpen: boolean
   onClose: () => void
-  initialMode?: 'login' | 'signup'
+  initialMode?: 'login' | 'signup' | 'recovery'
   onSuccess?: () => void
 }
 
@@ -19,17 +31,18 @@ const UCSI_DEMO_USERS = [
 ]
 
 export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthModalProps) {
-  const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
+  const [mode, setMode] = useState<'login' | 'signup' | 'recovery'>(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
   const supabase = createClient()
 
   if (!isOpen) return null
 
-  // Validate allowed email domains: @uc.edu.py, @gmail.com, @pol.una.py, @uca.edu.py, etc.
   const isValidEmailDomain = (val: string) => {
     const trimmed = val.toLowerCase().trim()
     return (
@@ -40,85 +53,139 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
     )
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    setErrorMsg('')
-
-    if (!isValidEmailDomain(email)) {
-      setErrorMsg('El correo debe pertenecer a la universidad (@uc.edu.py) o ser una cuenta @gmail.com.')
-      return
-    }
-
+  const handleQuickLogin = async (targetEmail: string) => {
     setLoading(true)
+    setErrorMsg('')
     try {
-      if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-        if (error) {
-          setErrorMsg('Error al iniciar sesión: ' + error.message)
-        } else {
-          onClose()
-          onSuccess?.()
-        }
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              university: 'UCSI Campus San Ignacio',
-            },
-          },
-        })
-        if (error) {
-          setErrorMsg('Error al registrar cuenta: ' + error.message)
-        } else {
-          if (data.user) {
-            await supabase.from('profiles').upsert({
-              id: data.user.id,
-              full_name: fullName || email.split('@')[0],
-              university_name: 'Universidad Católica Campus San Ignacio (UCSI)',
-              verified_email: true,
-            })
-          }
-          onClose()
-          onSuccess?.()
-        }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: targetEmail,
+        password: 'Password123!',
+      })
+      if (error) {
+        setErrorMsg('Error al iniciar sesión: ' + error.message)
+      } else if (data.session) {
+        onSuccess?.()
+        onClose()
       }
+    } catch {
+      setErrorMsg('Error de conexión con el servidor')
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleQuickLogin(targetEmail: string) {
+  const handlePasswordRecovery = async (e: FormEvent) => {
+    e.preventDefault()
     setLoading(true)
     setErrorMsg('')
-    const { error } = await supabase.auth.signInWithPassword({
-      email: targetEmail,
-      password: 'Password123!',
-    })
-    setLoading(false)
-    if (!error) {
-      onClose()
-      onSuccess?.()
-    } else {
-      setErrorMsg('Error al iniciar: ' + error.message)
+    setSuccessMsg('')
+
+    if (!isValidEmailDomain(email)) {
+      setErrorMsg('Por favor ingresa un correo válido (@uc.edu.py o @gmail.com)')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/perfil?reset=true`,
+      })
+      if (error) {
+        setErrorMsg(error.message)
+      } else {
+        setSuccessMsg(
+          '¡Correo de recuperación enviado! Revisa tu bandeja de entrada para restablecer tu contraseña.'
+        )
+      }
+    } catch {
+      setErrorMsg('Error al solicitar recuperación de contraseña.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (mode === 'recovery') {
+      return handlePasswordRecovery(e)
+    }
+
+    setErrorMsg('')
+    setSuccessMsg('')
+
+    if (!isValidEmailDomain(email)) {
+      setErrorMsg(
+        'Solo se permiten correos institucionales universitarios (@uc.edu.py, .edu.py) o cuentas verificadas de @gmail.com'
+      )
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      if (mode === 'login') {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        })
+
+        if (error) {
+          setErrorMsg(
+            error.message === 'Invalid login credentials'
+              ? 'Correo o contraseña incorrectos. Puedes usar las cuentas demo con 1 clic arriba.'
+              : error.message
+          )
+        } else if (data.session) {
+          onSuccess?.()
+          onClose()
+        }
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+            },
+          },
+        })
+
+        if (error) {
+          setErrorMsg(error.message)
+        } else if (data.user) {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            full_name: fullName.trim() || email.split('@')[0],
+            university_name: email.endsWith('@uc.edu.py')
+              ? 'Universidad Católica Campus San Ignacio (UCSI)'
+              : 'Universidad de Paraguay',
+          })
+
+          onSuccess?.()
+          onClose()
+        }
+      }
+    } catch {
+      setErrorMsg('Ocurrió un error inesperado. Intenta de nuevo.')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm overflow-y-auto">
-      <div className="my-6 w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl transition-all sm:p-7">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-900/10 sm:p-8">
         <div className="flex items-center justify-between">
           <div>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-blue-600">
-              <ShieldCheck className="size-3.5" /> UCSI Campus San Ignacio
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700">
+              <ShieldCheck className="size-3.5" /> UniMarket Seguro
             </span>
-            <h2 className="text-2xl font-bold text-slate-950">
-              {mode === 'login' ? 'Bienvenido a UniMarket' : 'Crea tu cuenta universitaria'}
+            <h2 className="mt-2 text-xl font-black text-slate-900">
+              {mode === 'login'
+                ? 'Iniciar sesión'
+                : mode === 'signup'
+                ? 'Crear cuenta universitaria'
+                : 'Recuperar contraseña'}
             </h2>
           </div>
           <button
@@ -130,38 +197,46 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
           </button>
         </div>
 
-        {/* Quick UCSI Account Switcher */}
-        <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5">
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-blue-900">
-            <Zap className="size-3.5 text-amber-500 fill-amber-400" />
-            <span>Iniciar como estudiante UCSI (1 Clic):</span>
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {UCSI_DEMO_USERS.map((u) => (
-              <button
-                key={u.email}
-                type="button"
-                onClick={() => handleQuickLogin(u.email)}
-                disabled={loading}
-                className="flex flex-col items-start rounded-xl border border-blue-200 bg-white p-2 text-left shadow-sm transition-all hover:border-blue-400 hover:bg-blue-50/50 disabled:opacity-50"
-              >
-                <span className="text-xs font-bold text-slate-900">{u.name}</span>
-                <div className="flex items-center gap-1 text-[10px] text-blue-600 font-medium">
-                  <span>{u.faculty}</span>
-                  <span>·</span>
-                  <span className="flex items-center gap-0.5 text-amber-700 font-bold">
-                    <Star className="size-2.5 fill-amber-400 text-amber-400" />
-                    {u.rating}
-                  </span>
-                </div>
-              </button>
-            ))}
+        {/* Quick UCSI Account Switcher (only for login) */}
+        {mode === 'login' && (
+          <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-blue-900">
+              <Zap className="size-3.5 text-amber-500 fill-amber-400" />
+              <span>Iniciar como estudiante UCSI (1 Clic):</span>
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {UCSI_DEMO_USERS.map((u) => (
+                <button
+                  key={u.email}
+                  type="button"
+                  onClick={() => handleQuickLogin(u.email)}
+                  disabled={loading}
+                  className="flex flex-col items-start rounded-xl border border-blue-200 bg-white p-2 text-left shadow-sm transition-all hover:border-blue-400 hover:bg-blue-50/50 disabled:opacity-50"
+                >
+                  <span className="text-xs font-bold text-slate-900">{u.name}</span>
+                  <div className="flex items-center gap-1 text-[10px] text-blue-600 font-medium">
+                    <span>{u.faculty}</span>
+                    <span>·</span>
+                    <span className="flex items-center gap-0.5 text-amber-700 font-bold">
+                      <Star className="size-2.5 fill-amber-400 text-amber-400" />
+                      {u.rating}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {errorMsg && (
           <div className="mt-4 rounded-xl bg-rose-50 p-3 text-xs font-medium text-rose-700">
             {errorMsg}
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-800">
+            {successMsg}
           </div>
         )}
 
@@ -182,7 +257,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
           <div>
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-slate-600">Correo Electrónico</label>
-              <span className="text-[10px] text-slate-400">Acepta @uc.edu.py y @gmail.com</span>
+              <span className="text-[10px] text-slate-400">@uc.edu.py o @gmail.com</span>
             </div>
             <input
               required
@@ -199,36 +274,89 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
             )}
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-slate-600">Contraseña</label>
-            <input
-              required
-              minLength={6}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
-              className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
+          {mode !== 'recovery' && (
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-600">Contraseña</label>
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('recovery')
+                      setErrorMsg('')
+                      setSuccessMsg('')
+                    }}
+                    className="text-[11px] font-bold text-blue-600 hover:underline"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                )}
+              </div>
+              <div className="relative mt-1">
+                <input
+                  required
+                  minLength={6}
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="h-11 w-full rounded-xl border border-slate-200 pl-3.5 pr-10 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="mt-2 h-11 w-full rounded-xl bg-blue-600 font-bold text-white shadow-md shadow-blue-200 transition-all hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Procesando...' : mode === 'login' ? 'Iniciar sesión' : 'Crear mi cuenta'}
+            {loading
+              ? 'Procesando...'
+              : mode === 'login'
+              ? 'Iniciar sesión'
+              : mode === 'signup'
+              ? 'Crear mi cuenta'
+              : 'Enviar enlace de recuperación'}
           </button>
         </form>
 
         <div className="mt-5 border-t border-slate-100 pt-3 text-center">
-          <button
-            type="button"
-            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-            className="text-xs font-semibold text-blue-600 hover:underline"
-          >
-            {mode === 'login' ? '¿Nuevo en UniMarket? Regístrate aquí' : '¿Ya tienes cuenta? Inicia sesión'}
-          </button>
+          {mode === 'recovery' ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login')
+                setErrorMsg('')
+                setSuccessMsg('')
+              }}
+              className="text-xs font-semibold text-blue-600 hover:underline"
+            >
+              ← Volver a Iniciar sesión
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setMode(mode === 'login' ? 'signup' : 'login')
+                setErrorMsg('')
+                setSuccessMsg('')
+              }}
+              className="text-xs font-semibold text-blue-600 hover:underline"
+            >
+              {mode === 'login'
+                ? '¿No tienes cuenta? Regístrate aquí'
+                : '¿Ya tienes cuenta? Inicia sesión'}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -202,7 +202,8 @@ export default function LandingPage() {
             <MessageCircle className="size-4 text-blue-600" />
             <span>Chat seguro</span>
           </div>
-          <div className="phone-shell">
+          {/* Hero visual phone shell (Mockup ilustrativo no interactivo) */}
+          <div className="phone-shell pointer-events-none select-none" aria-hidden="true">
             <div className="phone-screen">
               <div className="flex items-center justify-between">
                 <Logo compact />
@@ -216,45 +217,42 @@ export default function LandingPage() {
                   {new Date().toLocaleDateString('es-PY', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
                 <h2 className="mt-1 text-xl font-bold tracking-tight">
-                  Hola, {user ? user.email?.split('@')[0] : 'Martina'}
+                  Hola, Martina (UCSI)
                 </h2>
               </div>
-              <Link
-                href="/productos"
+              <div
                 className="mt-5 flex h-12 items-center gap-2 rounded-xl bg-slate-100 px-3 text-sm text-slate-400"
               >
                 <Search className="size-4" />
-                <span>¿Qué estás buscando?</span>
-              </Link>
+                <span>¿Qué necesitas para tus clases?</span>
+              </div>
               <div className="mt-6 flex gap-2 overflow-hidden">
                 {categories.map((category) => {
                   const Icon = category.icon
                   return (
-                    <Link
+                    <div
                       key={category.label}
-                      href="/productos"
                       className="flex min-w-[72px] flex-col items-center gap-2"
                     >
                       <div className={`grid size-12 place-items-center rounded-2xl category-${category.color}`}>
                         <Icon className="size-5" />
                       </div>
                       <span className="text-[10px] font-medium text-slate-500">{category.label}</span>
-                    </Link>
+                    </div>
                   )
                 })}
               </div>
               <div className="mt-7 flex items-center justify-between">
-                <h3 className="text-sm font-bold">Cerca de ti</h3>
-                <Link href="/productos" className="text-[11px] font-semibold text-blue-600">
-                  Ver todo
-                </Link>
+                <h3 className="text-sm font-bold">Cerca de ti en Campus San Ignacio</h3>
+                <span className="text-[11px] font-semibold text-blue-600">
+                  3 disponibles
+                </span>
               </div>
               <div className="mt-3 flex gap-3 overflow-hidden">
-                {products.map((product, index) => (
-                  <Link
+                {products.map((product) => (
+                  <div
                     key={product.name}
-                    href="/productos"
-                    className="w-[136px] shrink-0 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-xs transition-transform hover:-translate-y-0.5"
+                    className="w-[136px] shrink-0 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-xs"
                   >
                     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
                       <img
@@ -262,22 +260,6 @@ export default function LandingPage() {
                         alt={product.name}
                         className="h-full w-full object-cover"
                       />
-                      <button
-                        aria-label={`Guardar ${product.name}`}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          setLiked((current) =>
-                            current.map((value, itemIndex) => (itemIndex === index ? !value : value))
-                          )
-                        }}
-                        className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-white/90 shadow-xs"
-                      >
-                        <Heart
-                          className={`size-3 ${
-                            liked[index] ? 'fill-orange-500 text-orange-500' : 'text-slate-600'
-                          }`}
-                        />
-                      </button>
                     </div>
                     <p className="mt-1.5 truncate text-[11px] font-bold text-slate-900">{product.name}</p>
                     <div className="mt-0.5 flex items-center justify-between text-[10px]">
@@ -288,7 +270,7 @@ export default function LandingPage() {
                       </span>
                     </div>
                     <p className="mt-1 text-[11px] font-black text-blue-600">{product.price}</p>
-                  </Link>
+                  </div>
                 ))}
               </div>
             </div>

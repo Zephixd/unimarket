@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Heart, Package, Star, Trash2 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { BottomNav } from '@/components/bottom-nav'
+import { AuthGuard } from '@/components/auth-guard'
 import { ProductModal, ProductModalListing } from '@/components/product-modal'
 import { createClient } from '@/lib/supabase/client'
 
@@ -61,8 +62,9 @@ export default function FavoritosPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-24 text-slate-950 md:pb-12">
-      <Navbar />
+    <AuthGuard moduleName="tus publicaciones guardadas">
+      <div className="min-h-screen bg-slate-50/60 pb-24 text-slate-950 md:pb-12">
+        <Navbar />
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <Link
@@ -154,5 +156,6 @@ export default function FavoritosPage() {
 
       <BottomNav />
     </div>
+    </AuthGuard>
   )
 }
