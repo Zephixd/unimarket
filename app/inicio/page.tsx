@@ -23,6 +23,7 @@ import { PublishModal } from '@/components/publish-modal'
 import { ProductModal, ProductModalListing } from '@/components/product-modal'
 import { createClient } from '@/lib/supabase/client'
 import { OFFICIAL_CATEGORIES } from '@/lib/categories'
+import { fetchUserFavorites, toggleFavoriteItem, getLocalFavorites } from '@/lib/favorites'
 
 type Listing = {
   id: string
@@ -63,7 +64,7 @@ function formatPrice(value: number) {
 export default function InicioPage() {
   const supabase = createClient()
   const [listings, setListings] = useState<Listing[]>([])
-  const [liked, setLiked] = useState<string[]>([])
+  const [liked, setLiked] = useState<string[]>(() => getLocalFavorites())
   const [search, setSearch] = useState('')
   const [publishOpen, setPublishOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Listing | null>(null)
@@ -75,6 +76,10 @@ export default function InicioPage() {
       if (data.user) setUser({ id: data.user.id, email: data.user.email })
     })
 
+    fetchUserFavorites().then((favs) => {
+      if (favs) setLiked(favs)
+    })
+
     supabase
       .from('listings')
       .select('*, profiles:seller_id(id, full_name, career_name, university_name, rating, sales_count, avatar_url)')
@@ -82,7 +87,19 @@ export default function InicioPage() {
       .then(({ data }) => {
         if (data) setListings(data)
       })
+
+    const onFavChange = (e: any) => {
+      if (e.detail) setLiked(e.detail)
+    }
+    window.addEventListener('unimarket_favorites_changed', onFavChange)
+    return () => window.removeEventListener('unimarket_favorites_changed', onFavChange)
   }, [])
+
+  const handleToggleFavorite = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const isNowFav = await toggleFavoriteItem(id)
+    setLiked((prev) => (isNowFav ? Array.from(new Set([...prev, id])) : prev.filter((item) => item !== id)))
+  }
 
   return (
     <AuthGuard moduleName="el inicio de UniMarket">
@@ -170,12 +187,7 @@ export default function InicioPage() {
                       )}
 
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setLiked((prev) =>
-                            isFav ? prev.filter((id) => id !== item.id) : [...prev, item.id]
-                          )
-                        }}
+                        onClick={(e) => handleToggleFavorite(item.id, e)}
                         aria-label="Favorito"
                         className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/90 shadow-sm backdrop-blur-md"
                       >

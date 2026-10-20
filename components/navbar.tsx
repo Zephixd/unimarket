@@ -72,99 +72,82 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="grid size-10 place-items-center rounded-[13px] bg-blue-600 text-white shadow-sm shadow-blue-200">
-            <ShoppingBag className="size-5" strokeWidth={2.5} />
-          </div>
-          <span className="text-[1.15rem] font-bold tracking-[-0.04em] text-slate-950">
-            Uni<span className="text-blue-600">Market</span>
-          </span>
-        </Link>
+        {/* Left Side: Brand Logo + Desktop Nav */}
+        <div className="flex items-center gap-7 lg:gap-10 min-w-0">
+          {/* Brand Logo */}
+          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+            <div className="grid size-10 place-items-center rounded-[13px] bg-blue-600 text-white shadow-sm shadow-blue-200">
+              <ShoppingBag className="size-5" strokeWidth={2.5} />
+            </div>
+            <span className="text-[1.15rem] font-bold tracking-[-0.04em] text-slate-950">
+              Uni<span className="text-blue-600">Market</span>
+            </span>
+          </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden items-center gap-5 text-sm font-medium text-slate-600 lg:gap-6 md:flex">
-          <Link
-            href="/"
-            className={`transition-colors hover:text-blue-600 ${
-              pathname === '/' ? 'font-bold text-blue-600' : ''
-            }`}
-          >
-            Inicio
-          </Link>
-          <Link
-            href="/inicio"
-            className={`transition-colors hover:text-blue-600 ${
-              pathname === '/inicio' ? 'font-bold text-blue-600' : ''
-            }`}
-          >
-            Campus Feed
-          </Link>
-          <Link
-            href="/productos"
-            className={`transition-colors hover:text-blue-600 ${
-              pathname.startsWith('/productos') || pathname.startsWith('/buscar') ? 'font-bold text-blue-600' : ''
-            }`}
-          >
-            Catálogo
-          </Link>
-          <Link
-            href="/ranking"
-            className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
-              pathname.startsWith('/ranking') ? 'font-bold text-blue-600' : ''
-            }`}
-          >
-            <Trophy className="size-4 text-amber-500" />
-            <span>Ranking</span>
-          </Link>
-          <Link
-            href="/favoritos"
-            className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
-              pathname.startsWith('/favoritos') ? 'font-bold text-blue-600' : ''
-            }`}
-          >
-            <Heart className="size-4 text-rose-500 fill-rose-500/20" />
-            <span>Favoritos</span>
-          </Link>
-          <Link
-            href="/mensajes"
-            className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
-              pathname.startsWith('/mensajes') ? 'font-bold text-blue-600' : ''
-            }`}
-          >
-            <MessageCircle className="size-4" />
-            <span>Chat</span>
-          </Link>
-          <Link
-            href="/invitar"
-            className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
-              pathname.startsWith('/invitar') ? 'font-bold text-blue-600' : ''
-            }`}
-          >
-            <Gift className="size-4 text-indigo-500" />
-            <span>Invitar</span>
-          </Link>
-          <Link
-            href="/notificaciones"
-            className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
-              pathname.startsWith('/notificaciones') ? 'font-bold text-blue-600' : ''
-            }`}
-          >
-            <Bell className="size-4 text-blue-500" />
-            <span>Notificaciones</span>
-          </Link>
-          {user && (
+          {/* Desktop Navigation Links */}
+          <nav className="hidden items-center gap-5 text-sm font-medium text-slate-600 lg:gap-6 md:flex">
             <Link
-              href="/perfil"
-              className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
-                pathname.startsWith('/perfil') ? 'font-bold text-blue-600' : ''
+              href="/"
+              className={`transition-colors hover:text-blue-600 ${
+                pathname === '/' ? 'font-bold text-blue-600' : ''
               }`}
             >
-              <User className="size-4" />
-              <span>Mi Perfil</span>
+              Inicio
             </Link>
-          )}
-        </nav>
+            <Link
+              href="/inicio"
+              className={`transition-colors hover:text-blue-600 ${
+                pathname === '/inicio' ? 'font-bold text-blue-600' : ''
+              }`}
+            >
+              Campus Feed
+            </Link>
+            <Link
+              href="/productos"
+              className={`transition-colors hover:text-blue-600 ${
+                pathname.startsWith('/productos') || pathname.startsWith('/buscar') ? 'font-bold text-blue-600' : ''
+              }`}
+            >
+              Catálogo
+            </Link>
+            <Link
+              href="/ranking"
+              className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
+                pathname.startsWith('/ranking') ? 'font-bold text-blue-600' : ''
+              }`}
+            >
+              <Trophy className="size-4 text-amber-500" />
+              <span>Ranking</span>
+            </Link>
+            <Link
+              href="/mensajes"
+              className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
+                pathname.startsWith('/mensajes') ? 'font-bold text-blue-600' : ''
+              }`}
+            >
+              <MessageCircle className="size-4" />
+              <span>Chat</span>
+            </Link>
+            <Link
+              href="/invitar"
+              className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
+                pathname.startsWith('/invitar') ? 'font-bold text-blue-600' : ''
+              }`}
+            >
+              <Gift className="size-4 text-indigo-500" />
+              <span>Invitar</span>
+            </Link>
+            <Link
+              href="/favoritos"
+              className={`hidden xl:flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
+                pathname.startsWith('/favoritos') ? 'font-bold text-blue-600' : ''
+              }`}
+            >
+              <Heart className="size-4 text-rose-500 fill-rose-500/20" />
+              <span>Favoritos</span>
+            </Link>
+          </nav>
+        </div>
 
         {/* Action Buttons */}
         <div className="hidden items-center gap-2.5 md:flex">

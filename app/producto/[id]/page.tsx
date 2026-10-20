@@ -26,6 +26,7 @@ import { AuthGuard } from '@/components/auth-guard'
 import { ReportModal } from '@/components/report-modal'
 import { EditListingModal } from '@/components/edit-listing-modal'
 import { createClient } from '@/lib/supabase/client'
+import { getLocalFavorites, toggleFavoriteItem } from '@/lib/favorites'
 
 type ListingDetail = {
   id: string
@@ -64,7 +65,7 @@ export default function ProductoDetailPage() {
   const [listing, setListing] = useState<ListingDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
-  const [isLiked, setIsLiked] = useState(false)
+  const [isLiked, setIsLiked] = useState(() => (id ? getLocalFavorites().includes(id) : false))
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
@@ -74,6 +75,10 @@ export default function ProductoDetailPage() {
     const { data: authData } = await supabase.auth.getUser()
     if (authData.user) {
       setCurrentUser({ id: authData.user.id })
+    }
+
+    if (id) {
+      setIsLiked(getLocalFavorites().includes(id))
     }
 
     const { data, error } = await supabase
@@ -112,9 +117,10 @@ export default function ProductoDetailPage() {
   }, [id])
 
   async function toggleFavorite() {
-    if (!currentUser) return
-    setIsLiked(!isLiked)
-    setToastMsg(isLiked ? 'Eliminado de favoritos' : '¡Guardado en favoritos!')
+    if (!id) return
+    const newState = await toggleFavoriteItem(id)
+    setIsLiked(newState)
+    setToastMsg(newState ? '¡Guardado en favoritos!' : 'Eliminado de favoritos')
   }
 
   function handleShare() {

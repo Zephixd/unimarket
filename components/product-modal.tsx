@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ReportModal } from '@/components/report-modal'
+import { getLocalFavorites, toggleFavoriteItem } from '@/lib/favorites'
 
 export type ProductModalListing = {
   id: string
@@ -79,6 +80,13 @@ export function ProductModal({
   const [startingChat, setStartingChat] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [creatingDeal, setCreatingDeal] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(() => (listing ? getLocalFavorites().includes(listing.id) : false))
+
+  const handleToggleFavorite = async () => {
+    if (!listing) return
+    const newState = await toggleFavoriteItem(listing.id)
+    setIsFavorite(newState)
+  }
 
   if (!isOpen || !listing) return null
 
@@ -414,6 +422,19 @@ export function ProductModal({
                 </button>
               </>
             )}
+
+            {/* Botón de Favorito */}
+            <button
+              onClick={handleToggleFavorite}
+              title={isFavorite ? 'Eliminar de favoritos' : 'Guardar en favoritos'}
+              className={`grid size-11 place-items-center rounded-xl border transition-all ${
+                isFavorite
+                  ? 'border-rose-200 bg-rose-50 text-rose-600'
+                  : 'border-slate-200 bg-white text-slate-400 hover:text-rose-500 hover:bg-rose-50'
+              }`}
+            >
+              <Heart className={`size-4 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
+            </button>
 
             <button
               onClick={handleShare}

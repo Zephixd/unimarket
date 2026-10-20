@@ -435,7 +435,7 @@ export default function LandingPage() {
       <footer className="border-t border-slate-100 px-5 py-8 sm:px-8 lg:px-10">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
           <Logo />
-          <p>© 2025 UniMarket. Hecho para estudiantes, por estudiantes de Paraguay.</p>
+          <p>© 2026 UniMarket. Hecho para estudiantes, por estudiantes de Paraguay.</p>
           <div className="flex gap-5">
             <a href="#confianza" className="hover:text-slate-700">Privacidad</a>
             <a href="#confianza" className="hover:text-slate-700">Ayuda</a>

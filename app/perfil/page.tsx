@@ -40,7 +40,9 @@ import { BottomNav } from '@/components/bottom-nav'
 import { AuthGuard } from '@/components/auth-guard'
 import { PublishModal } from '@/components/publish-modal'
 import { EditListingModal } from '@/components/edit-listing-modal'
+import { ProductModal } from '@/components/product-modal'
 import { createClient } from '@/lib/supabase/client'
+import { fetchUserFavorites, toggleFavoriteItem } from '@/lib/favorites'
 
 type Profile = {
   id: string
@@ -111,7 +113,10 @@ export default function PerfilPage() {
   const [myListings, setMyListings] = useState<UserListing[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([])
-  const [activeTab, setActiveTab] = useState<'publicaciones' | 'resenas' | 'gamificacion' | 'seguridad'>('publicaciones')
+  const [activeTab, setActiveTab] = useState<'publicaciones' | 'favoritos' | 'resenas' | 'gamificacion' | 'seguridad'>('publicaciones')
+  const [myFavorites, setMyFavorites] = useState<any[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [productModalOpen, setProductModalOpen] = useState(false)
 
   // Edit Mode
   const [editing, setEditing] = useState(false)
@@ -193,10 +198,32 @@ export default function PerfilPage() {
     if (blockedData) {
       setBlockedUsers(blockedData as any)
     }
+
+    // Load user favorites
+    await loadFavorites()
+  }
+
+  async function loadFavorites() {
+    const favIds = await fetchUserFavorites()
+    if (favIds.length > 0) {
+      const { data: favData } = await supabase
+        .from('listings')
+        .select('*, profiles:seller_id(id, full_name, career_name, university_name, rating, sales_count, avatar_url)')
+        .in('id', favIds)
+      if (favData) setMyFavorites(favData)
+    } else {
+      setMyFavorites([])
+    }
   }
 
   useEffect(() => {
     loadProfile()
+
+    const onFavChange = () => {
+      loadFavorites()
+    }
+    window.addEventListener('unimarket_favorites_changed', onFavChange)
+    return () => window.removeEventListener('unimarket_favorites_changed', onFavChange)
   }, [])
 
   useEffect(() => {
@@ -591,13 +618,21 @@ export default function PerfilPage() {
               <Package className="size-4" />
               Mis Publicaciones ({myListings.length})
             </button>
-            <Link
-              href="/favoritos"
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 shrink-0"
+            <button
+              onClick={() => setActiveTab('favoritos')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition shrink-0 ${
+                activeTab === 'favoritos'
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              }`}
             >
-              <Heart className="size-4 fill-rose-500 text-rose-500" />
-              Mis Favoritos
-            </Link>
+              <Heart
+                className={`size-4 ${
+                  activeTab === 'favoritos' ? 'fill-white text-white' : 'fill-rose-500 text-rose-500'
+                }`}
+              />
+              Mis Favoritos ({myFavorites.length})
+            </button>
             <Link
               href="/notificaciones"
               className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 shrink-0"
@@ -742,6 +777,105 @@ export default function PerfilPage() {
                     <Plus className="size-3.5" />
                     Publicar mi primer artículo
                   </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab Content: Mis Favoritos */}
+          {activeTab === 'favoritos' && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Artículos Guardados ({myFavorites.length})</h3>
+                  <p className="text-xs text-slate-500">
+                    Tus publicaciones favoritas para intercambiar o comprar en el campus UCSI.
+                  </p>
+                </div>
+                <Link
+                  href="/favoritos"
+                  className="text-xs font-bold text-blue-600 hover:underline"
+                >
+                  Abrir pantalla completa →
+                </Link>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {myFavorites.map((item) => {
+                  const sellerName = item.profiles?.full_name || 'Estudiante UCSI'
+                  const sellerRating = item.profiles?.rating ?? 4.8
+
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedProduct(item)
+                        setProductModalOpen(true)
+                      }}
+                      className="flex gap-3.5 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm cursor-pointer transition-all hover:shadow-md hover:border-blue-300"
+                    >
+                      <div className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                        {item.image_url ? (
+                          <img src={item.image_url} alt={item.title} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="grid h-full w-full place-items-center text-slate-300">
+                            <Package className="size-6" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-1 flex-col justify-between min-w-0">
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900 truncate">{item.title}</h4>
+                          <p className="text-xs font-black text-blue-600">{formatPrice(item.price_gs)}</p>
+
+                          <div className="mt-1 flex items-center justify-between text-[10px]">
+                            <span className="truncate text-slate-600 font-medium">
+                              Vendido por: <strong className="text-slate-900">{sellerName}</strong>
+                            </span>
+                            <span className="flex items-center gap-0.5 font-bold text-amber-700 shrink-0">
+                              <Star className="size-2.5 fill-amber-400 text-amber-400" />
+                              {sellerRating.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                          <span className="text-xs font-bold text-blue-600">Ver información modal →</span>
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              await toggleFavoriteItem(item.id)
+                              setMyFavorites((prev) => prev.filter((f) => f.id !== item.id))
+                              setToastMsg('Eliminado de favoritos')
+                            }}
+                            title="Eliminar de favoritos"
+                            className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {myFavorites.length === 0 && (
+                <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+                  <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-rose-50 text-rose-500 mb-3">
+                    <Heart className="size-7" />
+                  </div>
+                  <p className="font-bold text-slate-700">No tienes artículos en favoritos</p>
+                  <p className="mt-1 text-xs text-slate-400 max-w-sm mx-auto">
+                    Toca el icono de corazón en cualquier publicación del catálogo o del inicio para guardarla aquí.
+                  </p>
+                  <Link
+                    href="/productos"
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition"
+                  >
+                    Explorar publicaciones
+                  </Link>
                 </div>
               )}
             </div>
@@ -1029,6 +1163,16 @@ export default function PerfilPage() {
             setToastMsg('¡Producto publicado con éxito!')
             loadProfile()
           }}
+        />
+
+        <ProductModal
+          isOpen={productModalOpen}
+          onClose={() => {
+            setProductModalOpen(false)
+            setSelectedProduct(null)
+          }}
+          listing={selectedProduct}
+          currentUserId={user?.id}
         />
 
         <BottomNav />

@@ -18,7 +18,7 @@ import { BottomNav } from '@/components/bottom-nav'
 
 export default function InvitarPage() {
   const [copied, setCopied] = useState(false)
-  const referralCode = 'UCSI-SANIGNACIO-2025'
+  const referralCode = 'UCSI-SANIGNACIO-2026'
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/registro?ref=${referralCode}` : `https://unimarket-development.vercel.app/registro?ref=${referralCode}`
 
   const copyToClipboard = () => {

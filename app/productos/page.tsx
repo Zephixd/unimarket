@@ -38,6 +38,7 @@ import { EditListingModal } from '@/components/edit-listing-modal'
 import { BottomNav } from '@/components/bottom-nav'
 import { AuthGuard } from '@/components/auth-guard'
 import { createClient } from '@/lib/supabase/client'
+import { fetchUserFavorites, toggleFavoriteItem, getLocalFavorites } from '@/lib/favorites'
 
 type Listing = {
   id: string
@@ -93,7 +94,7 @@ export default function ProductosPage() {
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null)
-  const [liked, setLiked] = useState<string[]>([])
+  const [liked, setLiked] = useState<string[]>(() => getLocalFavorites())
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedCondition, setSelectedCondition] = useState('all')
@@ -118,16 +119,10 @@ export default function ProductosPage() {
     const { data: userData } = await supabase.auth.getUser()
     if (userData.user) {
       setCurrentUser({ id: userData.user.id, email: userData.user.email })
-
-      // Load favorites for user
-      const { data: favs } = await supabase
-        .from('favorites')
-        .select('listing_id')
-        .eq('user_id', userData.user.id)
-      if (favs) {
-        setLiked(favs.map((f) => f.listing_id))
-      }
     }
+
+    const favs = await fetchUserFavorites()
+    if (favs) setLiked(favs)
 
     const { data, error } = await supabase
       .from('listings')
@@ -142,6 +137,12 @@ export default function ProductosPage() {
 
   useEffect(() => {
     loadData()
+
+    const onFavChange = (e: any) => {
+      if (e.detail) setLiked(e.detail)
+    }
+    window.addEventListener('unimarket_favorites_changed', onFavChange)
+    return () => window.removeEventListener('unimarket_favorites_changed', onFavChange)
   }, [])
 
   // Toast auto-clear
@@ -153,23 +154,9 @@ export default function ProductosPage() {
 
   // Toggle favorite
   async function toggleFavorite(id: string) {
-    if (!currentUser) {
-      setAuthMode('login')
-      setAuthOpen(true)
-      return
-    }
-
-    const isFav = liked.includes(id)
-    const newLiked = isFav ? liked.filter((item) => item !== id) : [...liked, id]
-    setLiked(newLiked)
-
-    if (isFav) {
-      await supabase.from('favorites').delete().eq('user_id', currentUser.id).eq('listing_id', id)
-      setToastMsg('Eliminado de favoritos')
-    } else {
-      await supabase.from('favorites').upsert({ user_id: currentUser.id, listing_id: id })
-      setToastMsg('¡Guardado en favoritos!')
-    }
+    const isNowFav = await toggleFavoriteItem(id)
+    setLiked((prev) => (isNowFav ? Array.from(new Set([...prev, id])) : prev.filter((item) => item !== id)))
+    setToastMsg(isNowFav ? '¡Guardado en favoritos!' : 'Eliminado de favoritos')
   }
 
   // Toggle mark as sold / reactivate

@@ -9,6 +9,8 @@ import { AuthGuard } from '@/components/auth-guard'
 import { ProductModal, ProductModalListing } from '@/components/product-modal'
 import { createClient } from '@/lib/supabase/client'
 
+import { fetchUserFavorites, toggleFavoriteItem } from '@/lib/favorites'
+
 type Listing = {
   id: string
   title: string
@@ -44,22 +46,43 @@ export default function FavoritosPage() {
   const [productModalOpen, setProductModalOpen] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
+  async function loadFavs() {
+    setLoading(true)
+    const favIds = await fetchUserFavorites()
+    if (favIds.length === 0) {
+      setFavorites([])
+      setLoading(false)
+      return
+    }
+
+    const { data } = await supabase
+      .from('listings')
+      .select('*, profiles:seller_id(id, full_name, career_name, university_name, rating, sales_count, avatar_url)')
+      .in('id', favIds)
+
+    if (data) {
+      setFavorites(data)
+    }
+    setLoading(false)
+  }
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) setCurrentUserId(data.user.id)
     })
 
-    async function loadFavs() {
-      setLoading(true)
-      const { data } = await supabase
-        .from('listings')
-        .select('*, profiles:seller_id(id, full_name, career_name, university_name, rating, sales_count, avatar_url)')
-        .limit(6)
-      if (data) setFavorites(data)
-      setLoading(false)
-    }
     loadFavs()
+
+    const onFavChange = () => loadFavs()
+    window.addEventListener('unimarket_favorites_changed', onFavChange)
+    return () => window.removeEventListener('unimarket_favorites_changed', onFavChange)
   }, [])
+
+  const handleRemoveFavorite = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    await toggleFavoriteItem(id)
+    setFavorites((prev) => prev.filter((f) => f.id !== id))
+  }
 
   return (
     <AuthGuard moduleName="tus publicaciones guardadas">
@@ -124,25 +147,40 @@ export default function FavoritosPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <span className="text-xs font-bold text-blue-600">Ver información modal →</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setFavorites((prev) => prev.filter((f) => f.id !== item.id))
-                      }}
-                      title="Eliminar de favoritos"
-                      className="text-slate-400 hover:text-rose-500"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                      <span className="text-xs font-bold text-blue-600">Ver información modal →</span>
+                      <button
+                        onClick={(e) => handleRemoveFavorite(item.id, e)}
+                        title="Eliminar de favoritos"
+                        className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
+              )
+            })}
+          </div>
+
+          {!loading && favorites.length === 0 && (
+            <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+              <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-rose-50 text-rose-500 mb-3">
+                <Heart className="size-8" />
               </div>
-            )
-          })}
-        </div>
-      </main>
+              <h3 className="text-base font-bold text-slate-800">Aún no tienes favoritos guardados</h3>
+              <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
+                Explora las publicaciones del campus y toca el corazón para guardar libros, apuntes o materiales y verlos aquí.
+              </p>
+              <Link
+                href="/productos"
+                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition"
+              >
+                Explorar Catálogo
+              </Link>
+            </div>
+          )}
+        </main>
 
       <ProductModal
         isOpen={productModalOpen}
