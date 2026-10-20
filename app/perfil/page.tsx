@@ -402,7 +402,7 @@ export default function PerfilPage() {
 
                   <p className="mt-2.5 max-w-lg text-xs text-slate-600 leading-relaxed">
                     {profile?.bio ||
-                      'Estudiante de UCSI Campus San Ignacio. Material académico listo para entrega en biblioteca.'}
+                      'Estudiante de 5to año de Ingeniería Informática en UCSI Campus San Ignacio. Material académico y tecnológico listo para entrega en campus.'}
                   </p>
                 </div>
               </div>
