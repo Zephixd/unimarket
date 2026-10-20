@@ -87,36 +87,7 @@ export default function InicioPage() {
   return (
     <AuthGuard moduleName="el inicio de UniMarket">
       <div className="min-h-screen bg-slate-50/60 pb-24 text-slate-950 md:pb-12">
-      {/* Top Header with small logo, notifications bell, and profile picture */}
-      <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 px-4 py-3 backdrop-blur-md sm:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="grid size-9 place-items-center rounded-xl bg-blue-600 text-white font-black text-sm">
-              UM
-            </div>
-            <span className="text-base font-extrabold text-slate-900 tracking-tight">
-              Uni<span className="text-blue-600">Market</span>
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/notificaciones"
-              className="relative grid size-9 place-items-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200"
-            >
-              <Bell className="size-4" />
-              <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-orange-500 ring-2 ring-white" />
-            </Link>
-
-            <Link
-              href="/perfil"
-              className="grid size-9 place-items-center rounded-xl bg-blue-100 text-blue-700 font-bold text-xs ring-2 ring-blue-200"
-            >
-              {user?.email ? user.email[0].toUpperCase() : <User className="size-4" />}
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar onOpenPublish={() => setPublishOpen(true)} />
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Big Search Bar */}

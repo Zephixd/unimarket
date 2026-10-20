@@ -83,7 +83,7 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden items-center gap-7 text-sm font-medium text-slate-600 md:flex">
+        <nav className="hidden items-center gap-5 text-sm font-medium text-slate-600 lg:gap-6 md:flex">
           <Link
             href="/"
             className={`transition-colors hover:text-blue-600 ${
@@ -106,7 +106,7 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
               pathname.startsWith('/productos') || pathname.startsWith('/buscar') ? 'font-bold text-blue-600' : ''
             }`}
           >
-            Explorar Productos
+            Catálogo
           </Link>
           <Link
             href="/ranking"
@@ -115,7 +115,16 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
             }`}
           >
             <Trophy className="size-4 text-amber-500" />
-            <span>Ranking UCSI</span>
+            <span>Ranking</span>
+          </Link>
+          <Link
+            href="/favoritos"
+            className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
+              pathname.startsWith('/favoritos') ? 'font-bold text-blue-600' : ''
+            }`}
+          >
+            <Heart className="size-4 text-rose-500 fill-rose-500/20" />
+            <span>Favoritos</span>
           </Link>
           <Link
             href="/mensajes"
@@ -125,6 +134,24 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
           >
             <MessageCircle className="size-4" />
             <span>Chat</span>
+          </Link>
+          <Link
+            href="/invitar"
+            className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
+              pathname.startsWith('/invitar') ? 'font-bold text-blue-600' : ''
+            }`}
+          >
+            <Gift className="size-4 text-indigo-500" />
+            <span>Invitar</span>
+          </Link>
+          <Link
+            href="/notificaciones"
+            className={`flex items-center gap-1.5 transition-colors hover:text-blue-600 ${
+              pathname.startsWith('/notificaciones') ? 'font-bold text-blue-600' : ''
+            }`}
+          >
+            <Bell className="size-4 text-blue-500" />
+            <span>Notificaciones</span>
           </Link>
           {user && (
             <Link
@@ -140,7 +167,7 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
         </nav>
 
         {/* Action Buttons */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-2.5 md:flex">
           {onOpenPublish && (
             <button
               onClick={() => {
@@ -150,7 +177,7 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
                 }
                 onOpenPublish()
               }}
-              className="flex items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-orange-200 transition-all hover:bg-orange-600"
+              className="flex items-center gap-1.5 rounded-xl bg-orange-500 px-3.5 py-2 text-xs font-bold text-white shadow-sm shadow-orange-200 transition-all hover:bg-orange-600"
             >
               <Plus className="size-4" /> Publicar
             </button>
@@ -159,13 +186,36 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
           {user ? (
             <div className="flex items-center gap-2">
               <Link
-                href="/perfil"
-                className="flex items-center gap-2 rounded-xl bg-blue-50 px-3.5 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                href="/favoritos"
+                title="Mis Favoritos Guardados"
+                className={`grid size-9 place-items-center rounded-xl border transition-colors ${
+                  pathname === '/favoritos'
+                    ? 'border-rose-300 bg-rose-50 text-rose-600'
+                    : 'border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600'
+                }`}
               >
-                <div className="grid size-5 place-items-center rounded-full bg-blue-600 text-[10px] text-white">
+                <Heart className="size-4 fill-rose-500 text-rose-500" />
+              </Link>
+              <Link
+                href="/notificaciones"
+                title="Notificaciones"
+                className={`relative grid size-9 place-items-center rounded-xl border transition-colors ${
+                  pathname === '/notificaciones'
+                    ? 'border-blue-300 bg-blue-50 text-blue-600'
+                    : 'border-slate-200 text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600'
+                }`}
+              >
+                <Bell className="size-4" />
+                <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-orange-500 ring-2 ring-white" />
+              </Link>
+              <Link
+                href="/perfil"
+                className="flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+              >
+                <div className="grid size-6 place-items-center rounded-full bg-blue-600 text-[11px] font-bold text-white">
                   {(profileName || user.email || 'U')[0].toUpperCase()}
                 </div>
-                <span className="max-w-[120px] truncate">
+                <span className="max-w-[110px] truncate">
                   {profileName || user.email?.split('@')[0]}
                 </span>
               </Link>
