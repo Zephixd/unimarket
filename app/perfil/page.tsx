@@ -471,32 +471,109 @@ export default function PerfilPage() {
               </form>
             )}
 
-            {/* Stats Bar */}
-            <div className="mt-7 grid grid-cols-4 divide-x divide-slate-100 border-t border-slate-100 pt-5 text-center">
-              <div>
-                <p className="text-xl font-black text-blue-600">{myListings.length}</p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Publicaciones</p>
-              </div>
-              <div>
-                <p className="text-xl font-black text-emerald-600">
-                  {myListings.filter((l) => l.status === 'sold').length}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Operaciones</p>
-              </div>
-              <div>
-                <p className="flex items-center justify-center gap-1 text-xl font-black text-amber-500">
-                  {reviews.length > 0
-                    ? (reviews.reduce((acc, r) => acc + r.stars, 0) / reviews.length).toFixed(1)
-                    : '5.0'}
-                  <Star className="size-4 fill-amber-400" />
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  {reviews.length} Calificaciones
-                </p>
-              </div>
-              <div>
-                <p className="text-xl font-black text-purple-600">{totalPoints}</p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Puntos UCSI</p>
+            {/* Stats Section - Tarjetas visuales independientes con iconos SVG, sin amontonamiento */}
+            <div className="mt-7 pt-6 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3.5">
+                {/* 1. Publicaciones */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('publicaciones')}
+                  className="flex flex-col justify-between rounded-2xl border border-blue-100/80 bg-gradient-to-br from-blue-50/50 via-white to-white p-3.5 text-left transition hover:border-blue-300 hover:shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Publicaciones
+                    </span>
+                    <div className="grid size-7 place-items-center rounded-xl bg-blue-100 text-blue-600">
+                      <Package className="size-3.5" />
+                    </div>
+                  </div>
+                  <div className="mt-2.5">
+                    <span className="text-2xl font-black tracking-tight text-slate-900">
+                      {myListings.length}
+                    </span>
+                    <p className="mt-0.5 text-[10px] font-semibold text-blue-600">
+                      {myListings.filter((l) => l.status === 'active' || !l.status).length} activas
+                    </p>
+                  </div>
+                </button>
+
+                {/* 2. Operaciones */}
+                <button
+                  type="button"
+                  onClick={() => router.push('/operaciones')}
+                  className="flex flex-col justify-between rounded-2xl border border-emerald-100/80 bg-gradient-to-br from-emerald-50/50 via-white to-white p-3.5 text-left transition hover:border-emerald-300 hover:shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Operaciones
+                    </span>
+                    <div className="grid size-7 place-items-center rounded-xl bg-emerald-100 text-emerald-600">
+                      <CheckCircle2 className="size-3.5" />
+                    </div>
+                  </div>
+                  <div className="mt-2.5">
+                    <span className="text-2xl font-black tracking-tight text-slate-900">
+                      {myListings.filter((l) => l.status === 'sold').length}
+                    </span>
+                    <p className="mt-0.5 text-[10px] font-semibold text-emerald-600">
+                      Concretadas
+                    </p>
+                  </div>
+                </button>
+
+                {/* 3. Calificaciones */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('resenas')}
+                  className="flex flex-col justify-between rounded-2xl border border-amber-100/80 bg-gradient-to-br from-amber-50/50 via-white to-white p-3.5 text-left transition hover:border-amber-300 hover:shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Valoración
+                    </span>
+                    <div className="grid size-7 place-items-center rounded-xl bg-amber-100 text-amber-600">
+                      <Star className="size-3.5 fill-amber-500 text-amber-500" />
+                    </div>
+                  </div>
+                  <div className="mt-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-2xl font-black tracking-tight text-slate-900">
+                        {reviews.length > 0
+                          ? (reviews.reduce((acc, r) => acc + r.stars, 0) / reviews.length).toFixed(1)
+                          : '5.0'}
+                      </span>
+                      <Star className="size-4 fill-amber-400 text-amber-400" />
+                    </div>
+                    <p className="mt-0.5 text-[10px] font-semibold text-amber-700">
+                      {reviews.length} {reviews.length === 1 ? 'calificación' : 'calificaciones'}
+                    </p>
+                  </div>
+                </button>
+
+                {/* 4. Puntos UCSI */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('gamificacion')}
+                  className="flex flex-col justify-between rounded-2xl border border-purple-100/80 bg-gradient-to-br from-purple-50/50 via-white to-white p-3.5 text-left transition hover:border-purple-300 hover:shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Puntos UCSI
+                    </span>
+                    <div className="grid size-7 place-items-center rounded-xl bg-purple-100 text-purple-600">
+                      <Sparkles className="size-3.5" />
+                    </div>
+                  </div>
+                  <div className="mt-2.5">
+                    <span className="text-2xl font-black tracking-tight text-slate-900">
+                      {totalPoints}
+                    </span>
+                    <p className="mt-0.5 text-[10px] font-semibold text-purple-600">
+                      Nivel Destacado
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -660,9 +737,10 @@ export default function PerfilPage() {
                   </p>
                   <button
                     onClick={() => setPublishOpen(true)}
-                    className="mt-4 rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 transition"
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 transition"
                   >
-                    + Publicar mi primer artículo
+                    <Plus className="size-3.5" />
+                    Publicar mi primer artículo
                   </button>
                 </div>
               )}
