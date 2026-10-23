@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -72,18 +72,45 @@ const INITIAL_NOTIFICATIONS = [
 ]
 
 export default function NotificacionesPage() {
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
+  const [readIds, setReadIds] = useState<string[]>([])
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    try {
+      const stored = localStorage.getItem('unimarket_read_notifications')
+      if (stored) {
+        setReadIds(JSON.parse(stored))
+      }
+    } catch {
+      // fallback
+    }
+  }, [])
+
+  const notifications = INITIAL_NOTIFICATIONS.map((n) => ({
+    ...n,
+    unread: mounted ? (readIds.includes(n.id) ? false : n.unread) : n.unread,
+  }))
 
   const unreadCount = notifications.filter((n) => n.unread).length
 
   function markAllAsRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))
+    const allIds = INITIAL_NOTIFICATIONS.map((n) => n.id)
+    setReadIds(allIds)
+    try {
+      localStorage.setItem('unimarket_read_notifications', JSON.stringify(allIds))
+      window.dispatchEvent(new Event('unimarket_notifications_updated'))
+    } catch {}
   }
 
   function markSingleAsRead(id: string) {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    )
+    if (readIds.includes(id)) return
+    const updated = [...readIds, id]
+    setReadIds(updated)
+    try {
+      localStorage.setItem('unimarket_read_notifications', JSON.stringify(updated))
+      window.dispatchEvent(new Event('unimarket_notifications_updated'))
+    } catch {}
   }
 
   return (

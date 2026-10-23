@@ -30,9 +30,26 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [profileName, setProfileName] = useState<string>('')
   const [mobileMenu, setMobileMenu] = useState(false)
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
+    function checkNotifications() {
+      try {
+        const stored = localStorage.getItem('unimarket_read_notifications')
+        const readIds = stored ? JSON.parse(stored) : []
+        const defaultUnreadIds = ['1', '2', '3']
+        const hasUnread = defaultUnreadIds.some((id) => !readIds.includes(id))
+        setHasUnreadNotifications(hasUnread)
+      } catch {
+        setHasUnreadNotifications(false)
+      }
+    }
+
+    checkNotifications()
+    window.addEventListener('unimarket_notifications_updated', checkNotifications)
+    window.addEventListener('storage', checkNotifications)
+
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setUser({ id: data.user.id, email: data.user.email })
@@ -58,7 +75,11 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
       }
     })
 
-    return () => listener.subscription.unsubscribe()
+    return () => {
+      listener.subscription.unsubscribe()
+      window.removeEventListener('unimarket_notifications_updated', checkNotifications)
+      window.removeEventListener('storage', checkNotifications)
+    }
   }, [])
 
   async function handleLogout() {
@@ -189,7 +210,9 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
                 }`}
               >
                 <Bell className="size-4" />
-                <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-orange-500 ring-2 ring-white" />
+                {hasUnreadNotifications && (
+                  <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-orange-500 ring-2 ring-white" />
+                )}
               </Link>
               <Link
                 href="/perfil"
@@ -314,10 +337,15 @@ export function Navbar({ onOpenPublish, onOpenAuth }: NavbarProps) {
             <Link
               href="/notificaciones"
               onClick={() => setMobileMenu(false)}
-              className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-slate-50"
+              className="flex items-center justify-between rounded-xl px-3 py-2 hover:bg-slate-50"
             >
-              <Bell className="size-4 text-blue-500" />
-              <span>Notificaciones</span>
+              <div className="flex items-center gap-2">
+                <Bell className="size-4 text-blue-500" />
+                <span>Notificaciones</span>
+              </div>
+              {hasUnreadNotifications && (
+                <span className="size-2 rounded-full bg-orange-500" />
+              )}
             </Link>
             {user ? (
               <>

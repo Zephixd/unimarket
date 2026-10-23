@@ -96,6 +96,40 @@ function ChatContent() {
     scrollToBottom()
   }, [messages])
 
+  const totalUnread = conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0)
+
+  async function markConversationAsRead(convId: string) {
+    if (!convId) return
+
+    // 1. Immediately update conversation in local state
+    setConversations((prev) =>
+      prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c))
+    )
+
+    // 2. Immediately mark messages as read in local state
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.conversation_id === convId && currentUser?.id && m.sender_id !== currentUser.id && !m.read_at
+          ? { ...m, read_at: new Date().toISOString() }
+          : m
+      )
+    )
+
+    // 3. Persist to Supabase
+    if (currentUser?.id) {
+      try {
+        await supabase
+          .from('messages')
+          .update({ read_at: new Date().toISOString() })
+          .eq('conversation_id', convId)
+          .neq('sender_id', currentUser.id)
+          .is('read_at', null)
+      } catch (e) {
+        console.error('Error marking conversation as read:', e)
+      }
+    }
+  }
+
   async function loadConversations() {
     setLoadingConv(true)
     const { data: authData } = await supabase.auth.getUser()
@@ -137,6 +171,16 @@ function ChatContent() {
           .order('created_at', { ascending: false })
           .limit(1)
 
+        // Count unread messages sent by the other user
+        const { count: unreadCount } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('conversation_id', conv.id)
+          .neq('sender_id', uid)
+          .is('read_at', null)
+
+        const isCurrentActive = activeConvId ? conv.id === activeConvId : false
+
         enriched.push({
           ...conv,
           listing: listingData || undefined,
@@ -144,13 +188,24 @@ function ChatContent() {
           other_user_name: otherProfile?.full_name || 'Estudiante UCSI',
           last_message: msgData?.[0]?.body || 'Conversación iniciada',
           last_message_time: msgData?.[0]?.created_at || conv.created_at,
-          unread_count: msgData?.[0] && msgData[0].sender_id !== uid && !msgData[0].read_at ? 1 : 0,
+          unread_count: isCurrentActive ? 0 : (unreadCount || 0),
         })
       }
       setConversations(enriched)
 
+      const targetId = activeConvId || enriched[0]?.id
       if (!activeConvId && enriched.length > 0) {
-        setActiveConvId(enriched[0].id)
+        setActiveConvId(targetId)
+      }
+
+      if (targetId) {
+        supabase
+          .from('messages')
+          .update({ read_at: new Date().toISOString() })
+          .eq('conversation_id', targetId)
+          .neq('sender_id', uid)
+          .is('read_at', null)
+          .then(() => {})
       }
     } else {
       setConversations([])
@@ -190,13 +245,21 @@ function ChatContent() {
 
       if (data) {
         setMessages(data)
+        if (currentUser?.id) {
+          const hasUnreadFromOther = data.some(
+            (m) => m.sender_id !== currentUser.id && !m.read_at
+          )
+          if (hasUnreadFromOther) {
+            markConversationAsRead(activeConvId!)
+          }
+        }
       }
     }
 
     loadMessages()
     const interval = setInterval(loadMessages, 3000)
     return () => clearInterval(interval)
-  }, [activeConvId])
+  }, [activeConvId, currentUser?.id])
 
   async function handleToggleBlock() {
     if (!currentUser?.id || !activeConversation?.other_user_id) return
@@ -225,15 +288,33 @@ function ChatContent() {
     setNewMessage('')
     setSending(true)
 
+    const nowIso = new Date().toISOString()
+
     const tempMsg: Message = {
       id: 'temp-' + Date.now(),
       conversation_id: activeConvId,
       sender_id: currentUser.id,
       body: text,
-      created_at: new Date().toISOString(),
+      created_at: nowIso,
       read_at: null,
     }
     setMessages((prev) => [...prev, tempMsg])
+
+    // Immediately update sidebar preview and clear unread badge, move to top
+    setConversations((prev) => {
+      const target = prev.find((c) => c.id === activeConvId)
+      if (!target) return prev
+      const updated: Conversation = {
+        ...target,
+        last_message: text,
+        last_message_time: nowIso,
+        unread_count: 0,
+      }
+      return [updated, ...prev.filter((c) => c.id !== activeConvId)]
+    })
+
+    // Mark previous messages as read as well
+    markConversationAsRead(activeConvId)
 
     const { data, error } = await supabase
       .from('messages')
@@ -264,9 +345,15 @@ function ChatContent() {
             <MessageCircle className="size-5 text-blue-600" />
             <h2 className="text-base font-black text-slate-900">Mensajes en Campus</h2>
           </div>
-          <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700">
-            {conversations.length}
-          </span>
+          {totalUnread > 0 ? (
+            <span className="rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-black text-white shadow-xs">
+              {totalUnread} {totalUnread === 1 ? 'nuevo' : 'nuevos'}
+            </span>
+          ) : (
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
+              {conversations.length} {conversations.length === 1 ? 'chat' : 'chats'}
+            </span>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
@@ -275,7 +362,10 @@ function ChatContent() {
             return (
               <button
                 key={conv.id}
-                onClick={() => setActiveConvId(conv.id)}
+                onClick={() => {
+                  setActiveConvId(conv.id)
+                  markConversationAsRead(conv.id)
+                }}
                 className={`flex w-full items-start gap-3 p-4 text-left transition-colors relative ${
                   isSelected ? 'bg-blue-50/80' : 'hover:bg-slate-50'
                 }`}
