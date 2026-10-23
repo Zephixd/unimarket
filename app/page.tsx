@@ -405,7 +405,7 @@ export default function LandingPage() {
               Vende con orgullo.
             </h2>
             <p className="mt-4 max-w-md leading-7 text-blue-100">
-              Perfiles verificados con correo institucional (@pol.una.py, @med.una.py, @uca.edu.py), chat integrado y encuentros seguros dentro de tu universidad.
+              Perfiles verificados con correo institucional (@uc.edu.py) o personal (@gmail.com), chat integrado y encuentros seguros dentro de tu universidad.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-4 lg:min-w-[470px]">

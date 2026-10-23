@@ -53,12 +53,7 @@ export default function RegisterPage() {
   // Validation helpers
   const isValidEmailDomain = (val: string) => {
     const trimmed = val.toLowerCase().trim()
-    return (
-      trimmed.endsWith('@uc.edu.py') ||
-      trimmed.endsWith('@gmail.com') ||
-      trimmed.endsWith('.edu.py') ||
-      trimmed.endsWith('.una.py')
-    )
+    return trimmed.endsWith('@uc.edu.py') || trimmed.endsWith('@gmail.com')
   }
 
   const step1Valid = firstName.trim().length >= 2 && lastName.trim().length >= 2
@@ -282,7 +277,7 @@ export default function RegisterPage() {
                         </span>
                       ) : (
                         <span className="flex items-center gap-1 font-medium text-rose-500 text-[11px]">
-                          <XCircle className="size-3.5" /> Debe terminar en @uc.edu.py, .edu.py o @gmail.com
+                          <XCircle className="size-3.5" /> Debe terminar en @uc.edu.py o @gmail.com
                         </span>
                       )}
                     </div>

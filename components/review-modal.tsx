@@ -37,22 +37,63 @@ export function ReviewModal({
 
     try {
       const { data: authData } = await supabase.auth.getUser()
-      const reviewerId = authData.user?.id || '07d8f8e1-b1b0-4c3c-b361-b925ed8502a5'
+      if (!authData.user) {
+        setErrorMsg('Debes iniciar sesión con tu cuenta para calificar a un compañero.')
+        return
+      }
 
-      const { error } = await supabase.from('reviews').insert({
+      const reviewerId = authData.user.id
+      if (reviewerId === sellerId) {
+        setErrorMsg('No puedes calificarte a ti mismo.')
+        return
+      }
+
+      // Upsert to handle both new reviews and updating existing ratings without duplicate key errors
+      const reviewPayload = {
         reviewer_id: reviewerId,
         reviewed_id: sellerId,
         listing_id: listingId || null,
         stars,
-        comment: comment || 'Excelente experiencia de compra en el campus.',
+        comment: comment || 'Excelente experiencia de trato en el campus.',
+        created_at: new Date().toISOString(),
+      }
+
+      let { error } = await supabase.from('reviews').upsert(reviewPayload, {
+        onConflict: 'listing_id,reviewer_id',
       })
 
+      // If conflict fallback is needed (e.g. if listing_id is null)
       if (error) {
-        setErrorMsg('Error al enviar calificación: ' + error.message)
-      } else {
-        onClose()
-        onSuccess?.()
+        let checkQuery = supabase.from('reviews').select('id').eq('reviewer_id', reviewerId)
+        if (listingId) {
+          checkQuery = checkQuery.eq('listing_id', listingId)
+        } else {
+          checkQuery = checkQuery.eq('reviewed_id', sellerId)
+        }
+        const { data: existing } = await checkQuery.maybeSingle()
+
+        if (existing?.id) {
+          const { error: updateError } = await supabase
+            .from('reviews')
+            .update({
+              stars,
+              comment: comment || 'Excelente experiencia de trato en el campus.',
+              created_at: new Date().toISOString(),
+            })
+            .eq('id', existing.id)
+
+          if (updateError) {
+            setErrorMsg('Error al actualizar calificación: ' + updateError.message)
+            return
+          }
+        } else {
+          setErrorMsg('Error al enviar calificación: ' + error.message)
+          return
+        }
       }
+
+      onClose()
+      onSuccess?.()
     } finally {
       setLoading(false)
     }

@@ -73,15 +73,18 @@ export default function FavoritosPage() {
 
     loadFavs()
 
-    const onFavChange = () => loadFavs()
+    const onFavChange = (e: any) => {
+      const updatedIds: string[] = e.detail || []
+      setFavorites((prev) => prev.filter((f) => updatedIds.includes(f.id)))
+    }
     window.addEventListener('unimarket_favorites_changed', onFavChange)
     return () => window.removeEventListener('unimarket_favorites_changed', onFavChange)
   }, [])
 
   const handleRemoveFavorite = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    await toggleFavoriteItem(id)
     setFavorites((prev) => prev.filter((f) => f.id !== id))
+    await toggleFavoriteItem(id)
   }
 
   return (

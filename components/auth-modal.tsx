@@ -45,12 +45,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
 
   const isValidEmailDomain = (val: string) => {
     const trimmed = val.toLowerCase().trim()
-    return (
-      trimmed.endsWith('@uc.edu.py') ||
-      trimmed.endsWith('@gmail.com') ||
-      trimmed.endsWith('.edu.py') ||
-      trimmed.endsWith('.una.py')
-    )
+    return trimmed.endsWith('@uc.edu.py') || trimmed.endsWith('@gmail.com')
   }
 
   const handleQuickLogin = async (targetEmail: string) => {
@@ -114,9 +109,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
     setSuccessMsg('')
 
     if (!isValidEmailDomain(email)) {
-      setErrorMsg(
-        'Solo se permiten correos institucionales universitarios (@uc.edu.py, .edu.py) o cuentas verificadas de @gmail.com'
-      )
+      setErrorMsg('Solo se permiten correos @uc.edu.py o @gmail.com')
       return
     }
 

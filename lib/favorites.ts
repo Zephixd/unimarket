@@ -14,11 +14,13 @@ export function getLocalFavorites(): string[] {
   }
 }
 
-export function saveLocalFavorites(ids: string[]) {
+export function saveLocalFavorites(ids: string[], emitEvent = true) {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
-    window.dispatchEvent(new CustomEvent('unimarket_favorites_changed', { detail: ids }))
+    if (emitEvent) {
+      window.dispatchEvent(new CustomEvent('unimarket_favorites_changed', { detail: ids }))
+    }
   } catch {}
 }
 
@@ -36,12 +38,12 @@ export async function fetchUserFavorites(): Promise<string[]> {
 
     if (!error && data) {
       const dbIds = data.map((d: any) => d.listing_id).filter(Boolean)
-      const merged = Array.from(new Set([...local, ...dbIds]))
-      saveLocalFavorites(merged)
-      return merged
+      // Save quietly to cache without emitting event to prevent infinite cascading loops
+      saveLocalFavorites(dbIds, false)
+      return dbIds
     }
   } catch {
-    // Fallback to local storage if supabase table doesn't exist
+    // Fallback to local storage if supabase table query fails
   }
   return local
 }
@@ -50,8 +52,11 @@ export async function toggleFavoriteItem(listingId: string): Promise<boolean> {
   const current = getLocalFavorites()
   const exists = current.includes(listingId)
   const updated = exists ? current.filter((id) => id !== listingId) : [...current, listingId]
-  saveLocalFavorites(updated)
+  
+  // 1. Immediately save locally and notify listeners
+  saveLocalFavorites(updated, true)
 
+  // 2. Synchronize with database asynchronously
   const supabase = createClient()
   try {
     const { data: auth } = await supabase.auth.getUser()
@@ -68,9 +73,7 @@ export async function toggleFavoriteItem(listingId: string): Promise<boolean> {
           .upsert({ user_id: auth.user.id, listing_id: listingId })
       }
     }
-  } catch {
-    // If table write fails, local storage keeps state intact
-  }
+  } catch {}
 
   return !exists
 }

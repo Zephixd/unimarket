@@ -219,8 +219,9 @@ export default function PerfilPage() {
   useEffect(() => {
     loadProfile()
 
-    const onFavChange = () => {
-      loadFavorites()
+    const onFavChange = (e: any) => {
+      const updatedIds: string[] = e.detail || []
+      setMyFavorites((prev) => prev.filter((item) => updatedIds.includes(item.id)))
     }
     window.addEventListener('unimarket_favorites_changed', onFavChange)
     return () => window.removeEventListener('unimarket_favorites_changed', onFavChange)
@@ -845,9 +846,9 @@ export default function PerfilPage() {
                           <button
                             onClick={async (e) => {
                               e.stopPropagation()
-                              await toggleFavoriteItem(item.id)
                               setMyFavorites((prev) => prev.filter((f) => f.id !== item.id))
                               setToastMsg('Eliminado de favoritos')
+                              await toggleFavoriteItem(item.id)
                             }}
                             title="Eliminar de favoritos"
                             className="text-slate-400 hover:text-rose-500 transition-colors p-1"
