@@ -17,3 +17,7 @@ node_modules
 .vercel
 package-lock.json
 *.tsbuildinfo
+
+# Archivos personales / de desarrollo (no se publican)
+/scripts/check_tables.js
+/scripts/seed_ucsi.js
